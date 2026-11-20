@@ -1,0 +1,20 @@
+{
+  "name": "job-crawler-radar",
+  "version": "2.0.0",
+  "description": "Automated Job Crawler, Matcher, and Recruiter Outreach Hub for Sarthak Joshi",
+  "scripts": {
+    "start": "python run.py",
+    "dev": "python run.py",
+    "crawl": "python run.py --crawl",
+    "mail": "python run.py --mail"
+  },
+  "keywords": [
+    "job-crawler",
+    "firecrawl",
+    "mongodb",
+    "recruiter-outreach"
+  ],
+  "author": "Sarthak Joshi",
+  "license": "MIT"
+}
+

@@ -56,8 +56,50 @@ class Database:
                 if updates:
                     self.jobs_col.bulk_write(updates, ordered=False)
                     logger.info(f"Backfilled country field for {len(updates)} existing jobs.")
+            
+            # Backfill default LinkedIn search metadata for existing documents
+            self._backfill_linkedin_metadata()
         except Exception as e:
             logger.debug(f"Country backfill note: {e}")
+
+    def _backfill_linkedin_metadata(self):
+        """Ensures all existing jobs have valid LinkedIn search URLs and connection templates."""
+        try:
+            if self.jobs_col is None:
+                return
+            missing = list(self.jobs_col.find(
+                {"$or": [{"linkedin_search_url": {"$exists": False}}, {"linkedin_search_url": ""}]},
+                {"_id": 1, "company": 1, "title": 1}
+            ))
+            if missing:
+                updates = []
+                for doc in missing:
+                    comp = doc.get("company", "Tech Company").strip()
+                    title = doc.get("title", "Backend Developer").strip()
+                    search_url = f"https://www.linkedin.com/search/results/people/?keywords={comp.replace(' ', '+')}+technical+recruiter"
+                    note = (
+                        f"Hi there, saw the {title} opening at {comp}. "
+                        f"With 1.8+ yrs building high-scale NestJS/Node.js/PostgreSQL APIs (300K+ users at PRYM), "
+                        f"I'd love to connect and share how my backend background fits your team's goals!"
+                    )[:298]
+                    contacts = [{
+                        "name": f"{comp} Recruiting Team",
+                        "role": "Technical Recruiting & Talent Acquisition",
+                        "url": search_url
+                    }]
+                    updates.append(UpdateOne(
+                        {"_id": doc["_id"]},
+                        {"$set": {
+                            "linkedin_search_url": search_url,
+                            "linkedin_connection_note": note,
+                            "linkedin_contacts": contacts
+                        }}
+                    ))
+                if updates:
+                    self.jobs_col.bulk_write(updates, ordered=False)
+                    logger.info(f"Backfilled LinkedIn search and contact metadata for {len(updates)} existing jobs.")
+        except Exception as e:
+            logger.debug(f"LinkedIn metadata backfill note: {e}")
 
     def is_connected(self) -> bool:
         if not self.client:
@@ -119,6 +161,9 @@ class Database:
                 "source": job.get("source", "Web"),
                 "date_posted": job.get("date_posted", datetime.date.today().isoformat()),
                 "description": job.get("description", "")[:1000],
+                "linkedin_contacts": job.get("linkedin_contacts", []),
+                "linkedin_search_url": job.get("linkedin_search_url", ""),
+                "linkedin_connection_note": job.get("linkedin_connection_note", ""),
                 "last_scraped_at": now
             }
 
@@ -306,6 +351,21 @@ class Database:
             return res.modified_count > 0 or res.matched_count > 0
         except Exception as e:
             logger.error(f"Failed to update job status: {e}")
+            return False
+
+    def update_job_linkedin_contacts(self, job_id: str, contacts: list, search_url: str = "", note: str = "") -> bool:
+        if self.jobs_col is None:
+            return False
+        try:
+            update_data = {
+                "linkedin_contacts": contacts,
+                "linkedin_search_url": search_url,
+                "linkedin_connection_note": note
+            }
+            res = self.jobs_col.update_one({"_id": ObjectId(job_id)}, {"$set": update_data})
+            return res.modified_count > 0 or res.matched_count > 0
+        except Exception as e:
+            logger.error(f"Failed to update LinkedIn contacts for {job_id}: {e}")
             return False
 
     def log_crawler_run(self, run_data: Dict[str, Any]):

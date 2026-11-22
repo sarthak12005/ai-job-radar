@@ -17,6 +17,7 @@ from database import db_instance
 from main import run_pipeline
 from mailer import Mailer
 from excel_reporter import ExcelReporter
+from job_crawler import JobCrawler
 
 logger = get_logger("Server")
 
@@ -275,6 +276,31 @@ def send_cold_email(job_id: str, req: ColdEmailRequest):
     else:
         logger.error(f"Failed to dispatch cold email: {res.get('error')}")
         raise HTTPException(status_code=500, detail=res.get("error", "Failed to dispatch email"))
+
+@app.post("/api/jobs/{job_id}/enrich-linkedin", tags=["Jobs"], summary="Discover Company LinkedIn Contacts on Demand")
+def enrich_linkedin(job_id: str):
+    """Discovers live recruiters & engineering leads on LinkedIn for this company using Firecrawl/Web discovery."""
+    job = db_instance.get_job_by_id(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    crawler = JobCrawler()
+    crawler._enrich_linkedin_contacts(job)
+
+    db_instance.update_job_linkedin_contacts(
+        job_id=job_id,
+        contacts=job.get("linkedin_contacts", []),
+        search_url=job.get("linkedin_search_url", ""),
+        note=job.get("linkedin_connection_note", "")
+    )
+    return {
+        "success": True,
+        "job_id": job_id,
+        "company": job.get("company"),
+        "linkedin_contacts": job.get("linkedin_contacts", []),
+        "linkedin_search_url": job.get("linkedin_search_url", ""),
+        "linkedin_connection_note": job.get("linkedin_connection_note", "")
+    }
 
 @app.post("/api/trigger", tags=["Crawl Engine"], summary="Trigger Job Crawler in Background")
 def trigger_crawl(background_tasks: BackgroundTasks, req: Optional[CrawlTriggerRequest] = None):
@@ -1324,6 +1350,27 @@ HTML_CONTENT = """<!DOCTYPE html>
 
             const dateStr = job.date_posted || 'Recently posted';
 
+            // LinkedIn contacts pills
+            const contacts = job.linkedin_contacts || [];
+            let linkedinContactsHtml = '';
+            if (contacts.length > 0) {
+                linkedinContactsHtml = contacts.map(c => `
+                    <a href="${c.url}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-700/80 text-[11px] transition" title="${escapeHtml(c.role || 'Talent')}">
+                        <span class="font-medium text-zinc-200">${escapeHtml(c.name)}</span>
+                        <span class="text-zinc-500 font-normal">(${escapeHtml((c.role || '').split('at')[0].trim())})</span>
+                        <i class="fa-solid fa-arrow-up-right-from-square text-[9px] text-zinc-500"></i>
+                    </a>
+                `).join(' ');
+            } else {
+                const searchUrl = job.linkedin_search_url || `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(company)}+technical+recruiter`;
+                linkedinContactsHtml = `
+                    <a href="${searchUrl}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-[11px] text-zinc-400 hover:text-zinc-200 transition">
+                        <span>Search ${escapeHtml(company)} Recruiters</span>
+                        <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
+                    </a>
+                `;
+            }
+
             return `
                 <div class="card-interactive rounded-xl p-4 border border-zinc-800 flex flex-col md:flex-row md:items-center justify-between gap-3">
                     <div class="flex items-start space-x-3 flex-1 min-w-0">
@@ -1365,6 +1412,27 @@ HTML_CONTENT = """<!DOCTYPE html>
 
                             <div class="flex flex-wrap gap-1 pt-0.5">
                                 ${skillsHtml}
+                            </div>
+
+                            <!-- Discovered LinkedIn Recruiters & Key Leads -->
+                            <div class="mt-2 pt-2 border-t border-zinc-800/80 flex flex-wrap items-center justify-between gap-2 text-xs">
+                                <div class="flex items-center gap-1.5 flex-wrap">
+                                    <span class="text-zinc-400 font-medium flex items-center gap-1">
+                                        <i class="fa-brands fa-linkedin text-[#0A66C2]"></i>
+                                        <span>Recruiters:</span>
+                                    </span>
+                                    ${linkedinContactsHtml}
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <button onclick="copyLinkedInPitch('${job._id}')" class="btn-ghost !px-2 !py-0.5 text-xs text-zinc-400 hover:text-zinc-200" title="Copy tailored 300-char connection note for LinkedIn">
+                                        <i class="fa-regular fa-copy mr-1 text-[11px]"></i>
+                                        <span>Copy Note</span>
+                                    </button>
+                                    <a href="${job.linkedin_search_url || `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(company)}+technical+recruiter`}" target="_blank" rel="noopener noreferrer" class="btn-ghost !px-2 !py-0.5 text-xs text-zinc-400 hover:text-[#0A66C2]" title="Search company employees on LinkedIn">
+                                        <i class="fa-brands fa-linkedin mr-1 text-[11px]"></i>
+                                        <span>Search All</span>
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1481,6 +1549,17 @@ HTML_CONTENT = """<!DOCTYPE html>
             pageSize = parseInt(newSize);
             currentPage = 1;
             fetchJobs(1);
+        }
+
+        function copyLinkedInPitch(jobId) {
+            const job = window.allJobsMap.get(jobId);
+            if (!job) return;
+            const note = job.linkedin_connection_note || `Hi there, saw the ${job.title || 'Backend'} role at ${job.company || 'your team'}. With 1.8+ yrs building high-scale NestJS/Node.js/PostgreSQL APIs (300K+ users at PRYM), I'd love to connect and share how my backend background fits your team's goals!`;
+            navigator.clipboard.writeText(note).then(() => {
+                showToast("Copied 300-char LinkedIn connection note!");
+            }).catch(() => {
+                prompt("Copy LinkedIn Connection Note:", note);
+            });
         }
 
         // Job Status Update via API

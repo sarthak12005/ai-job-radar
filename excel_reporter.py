@@ -82,7 +82,9 @@ class ExcelReporter:
             ("Contact Channel", 24),
             ("Cold Outreach Subject", 35),
             ("Cold Outreach Message", 45),
-            ("Date / Source", 18)
+            ("Date / Source", 18),
+            ("Key LinkedIn Contact / Recruiter", 34),
+            ("LinkedIn 300-Char Connection Pitch", 46)
         ]
 
         header_row = 6
@@ -188,13 +190,160 @@ class ExcelReporter:
             c11.alignment = Alignment(horizontal="center", vertical="center")
             c11.border = thin_border
 
-            ws.row_dimensions[current_row].height = 40
+            # Col 12: Key LinkedIn Contact / Recruiter
+            c12 = ws.cell(row=current_row, column=12)
+            contacts = job.get("linkedin_contacts", [])
+            search_url = job.get("linkedin_search_url", "")
+            if contacts and len(contacts) > 0 and contacts[0].get("name"):
+                fc = contacts[0]
+                c12.value = f"👉 {fc.get('name')} ({fc.get('role', 'Talent')})"
+                c12.hyperlink = fc.get("url", search_url)
+                c12.font = link_font
+            elif search_url:
+                c12.value = "🔍 Search on LinkedIn"
+                c12.hyperlink = search_url
+                c12.font = link_font
+            else:
+                c12.value = "N/A"
+                c12.font = regular_font
+            c12.alignment = Alignment(vertical="center")
+            c12.border = thin_border
+
+            # Col 13: LinkedIn 300-Char Connection Pitch
+            c13 = ws.cell(row=current_row, column=13, value=job.get("linkedin_connection_note", ""))
+            c13.font = regular_font
+            c13.alignment = Alignment(vertical="top", wrap_text=True)
+            c13.border = thin_border
+
+            ws.row_dimensions[current_row].height = 42
             current_row += 1
 
-        # 5. Set Column Widths
+        # 5. Set Sheet 1 Column Widths
         for idx, (_, width) in enumerate(headers, 1):
             col_letter = get_column_letter(idx)
             ws.column_dimensions[col_letter].width = width
+
+        # ==========================================
+        # Sheet 2: Dedicated LinkedIn Recruiters & Leads Tab
+        # ==========================================
+        ws2 = wb.create_sheet(title="LinkedIn Recruiter Leads")
+        ws2.views.sheetView[0].showGridLines = True
+
+        # Sheet 2 Title Banner
+        ws2.merge_cells("A1:H1")
+        ws2["A1"] = f"🤝 LinkedIn Recruiters & Key Leads for {candidate_name}"
+        ws2["A1"].font = title_font
+        ws2["A1"].alignment = Alignment(vertical="center")
+
+        ws2.merge_cells("A2:H2")
+        ws2["A2"] = f"Generated on: {today_str} | Direct Recruiter URLs & Tailored 300-Char Connection Notes"
+        ws2["A2"].font = subtitle_font
+        ws2["A2"].alignment = Alignment(vertical="center")
+
+        headers_s2 = [
+            ("Match %", 10),
+            ("Company", 22),
+            ("Target Role", 30),
+            ("Recruiter / Lead Name", 26),
+            ("Role / Title at Company", 32),
+            ("Direct LinkedIn Profile", 25),
+            ("Search All Recruiters", 24),
+            ("Custom 300-Char Connection Pitch (Copy & Paste)", 52)
+        ]
+
+        h2_row = 4
+        for col_num, (h_title, _) in enumerate(headers_s2, 1):
+            cell = ws2.cell(row=h2_row, column=col_num)
+            cell.value = h_title
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+            cell.border = thin_border
+        ws2.row_dimensions[h2_row].height = 28
+
+        s2_current_row = h2_row + 1
+        for job in sorted_jobs:
+            score = job.get("match_score", 0)
+            comp = job.get("company", "Company")
+            title = job.get("title", "Role")
+            search_url = job.get("linkedin_search_url", f"https://www.linkedin.com/search/results/people/?keywords={comp.replace(' ', '+')}+recruiter")
+            note = job.get("linkedin_connection_note", "")
+
+            contacts = job.get("linkedin_contacts", [])
+            if not contacts:
+                contacts = [{
+                    "name": f"{comp} Talent Acquisition",
+                    "role": "Recruiting & Engineering Leads",
+                    "url": search_url
+                }]
+
+            row_fill_s2 = green_fill if score >= 75 else (zebra_fill if s2_current_row % 2 == 0 else white_fill)
+
+            for c in contacts:
+                c_name = c.get("name", "Recruiter")
+                c_role = c.get("role", "Talent Acquisition")
+                c_url = c.get("url", search_url)
+
+                # Col 1: Score
+                cell1 = ws2.cell(row=s2_current_row, column=1, value=f"{score}%")
+                cell1.font = bold_font
+                cell1.alignment = Alignment(horizontal="center", vertical="center")
+                cell1.fill = row_fill_s2
+                cell1.border = thin_border
+
+                # Col 2: Company
+                cell2 = ws2.cell(row=s2_current_row, column=2, value=comp)
+                cell2.font = bold_font
+                cell2.alignment = Alignment(vertical="center")
+                cell2.border = thin_border
+
+                # Col 3: Role
+                cell3 = ws2.cell(row=s2_current_row, column=3, value=title)
+                cell3.font = regular_font
+                cell3.alignment = Alignment(vertical="center")
+                cell3.border = thin_border
+
+                # Col 4: Contact Name
+                cell4 = ws2.cell(row=s2_current_row, column=4, value=c_name)
+                cell4.font = bold_font
+                cell4.alignment = Alignment(vertical="center")
+                cell4.border = thin_border
+
+                # Col 5: Contact Role
+                cell5 = ws2.cell(row=s2_current_row, column=5, value=c_role)
+                cell5.font = regular_font
+                cell5.alignment = Alignment(vertical="center")
+                cell5.border = thin_border
+
+                # Col 6: Profile Link
+                cell6 = ws2.cell(row=s2_current_row, column=6)
+                cell6.value = "👉 Open Profile"
+                cell6.hyperlink = c_url
+                cell6.font = link_font
+                cell6.alignment = Alignment(horizontal="center", vertical="center")
+                cell6.border = thin_border
+
+                # Col 7: Search Link
+                cell7 = ws2.cell(row=s2_current_row, column=7)
+                cell7.value = "🔍 Search All"
+                cell7.hyperlink = search_url
+                cell7.font = link_font
+                cell7.alignment = Alignment(horizontal="center", vertical="center")
+                cell7.border = thin_border
+
+                # Col 8: Connection Note
+                cell8 = ws2.cell(row=s2_current_row, column=8, value=note)
+                cell8.font = regular_font
+                cell8.alignment = Alignment(vertical="top", wrap_text=True)
+                cell8.border = thin_border
+
+                ws2.row_dimensions[s2_current_row].height = 40
+                s2_current_row += 1
+
+        # Set Sheet 2 Column Widths
+        for idx, (_, width) in enumerate(headers_s2, 1):
+            col_letter = get_column_letter(idx)
+            ws2.column_dimensions[col_letter].width = width
 
         wb.save(file_path)
         return file_path

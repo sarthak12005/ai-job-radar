@@ -20,6 +20,7 @@ class JobCrawler:
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             "Accept": "application/json, text/html, */*"
         })
+        self.company_linkedin_cache = {}
 
     def crawl_all(self, target_roles=None, days_back=2, target_country="India", target_state=None) -> list:
         """Crawls all sources concurrently for jobs matching target country, state, and roles."""
@@ -67,6 +68,10 @@ class JobCrawler:
                 
                 # Enrich with HR / Recruiter email contact if missing
                 self._enrich_contact_email(j)
+
+                # Enrich with key company contacts & recruiters on LinkedIn
+                self._enrich_linkedin_contacts(j)
+
                 deduped.append(j)
 
         logger.info(f"Total unique recent jobs collected: {len(deduped)}")
@@ -360,3 +365,106 @@ class JobCrawler:
         else:
             job["contact_email"] = "careers@company.com"
             job["contact_type"] = "Careers Desk"
+
+    def _enrich_linkedin_contacts(self, job: dict):
+        """
+        Crawls and discovers key LinkedIn recruiter and engineering lead contacts
+        for the job's company, generating a tailored 300-char LinkedIn pitch.
+        """
+        company = job.get("company", "").strip()
+        if not company or company.lower() in ["tech company", "stealth", "confidential"]:
+            search_query_url = "https://www.linkedin.com/search/results/people/?keywords=technical+recruiter"
+            job["linkedin_contacts"] = [{
+                "name": "Technical Recruiter",
+                "role": "Talent Acquisition",
+                "url": search_query_url
+            }]
+            job["linkedin_search_url"] = search_query_url
+            job["linkedin_connection_note"] = self._generate_linkedin_note(job, [])
+            return
+
+        # Check in-memory cache to prevent duplicate queries for the same company
+        if company in self.company_linkedin_cache:
+            cached = self.company_linkedin_cache[company]
+            job["linkedin_contacts"] = cached.get("contacts", [])
+            job["linkedin_search_url"] = cached.get("search_url", "")
+            job["linkedin_connection_note"] = self._generate_linkedin_note(job, cached.get("contacts", []))
+            return
+
+        search_query_url = f"https://www.linkedin.com/search/results/people/?keywords={requests.utils.quote(company)}+technical+recruiter"
+        discovered_contacts = []
+
+        if self.firecrawl_key:
+            # Query Firecrawl for live LinkedIn profiles at this company
+            query = f'site:linkedin.com/in/ "{company}" ("Technical Recruiter" OR "Talent Acquisition" OR "Engineering Manager" OR "CTO")'
+            headers = {
+                "Authorization": f"Bearer {self.firecrawl_key}",
+                "Content-Type": "application/json"
+            }
+            try:
+                resp = self.session.post(
+                    f"{config.FIRECRAWL_API_URL}/v1/search",
+                    json={"query": query, "limit": 3},
+                    headers=headers,
+                    timeout=8
+                )
+                if resp.status_code == 200:
+                    results = resp.json().get("data", [])
+                    for item in results:
+                        u = item.get("url", "")
+                        t = item.get("title", "")
+                        if "linkedin.com/in/" in u and t:
+                            name, role = self._parse_linkedin_title(t, company)
+                            if name:
+                                discovered_contacts.append({
+                                    "name": name,
+                                    "role": role,
+                                    "url": u
+                                })
+            except Exception as e:
+                logger.debug(f"LinkedIn search error for {company}: {e}")
+
+        # If no specific profile was found, provide default team search entry
+        if not discovered_contacts:
+            discovered_contacts.append({
+                "name": f"{company} Recruiting Team",
+                "role": "Technical Recruiting & Talent Acquisition",
+                "url": search_query_url
+            })
+
+        self.company_linkedin_cache[company] = {
+            "contacts": discovered_contacts,
+            "search_url": search_query_url
+        }
+
+        job["linkedin_contacts"] = discovered_contacts
+        job["linkedin_search_url"] = search_query_url
+        job["linkedin_connection_note"] = self._generate_linkedin_note(job, discovered_contacts)
+
+    def _parse_linkedin_title(self, raw_title: str, company: str) -> tuple:
+        """Parses LinkedIn title string into (Name, Role)."""
+        clean = raw_title.replace(" | LinkedIn", "").replace(" - LinkedIn", "").strip()
+        parts = re.split(r'\s*[-–—|]\s*', clean)
+        name = parts[0].strip() if len(parts) >= 1 else ""
+        role = parts[1].strip() if len(parts) >= 2 else f"Talent Acquisition at {company}"
+        # Avoid generic or invalid titles
+        if len(name.split()) > 4 or any(w in name.lower() for w in ["jobs", "careers", "linkedin", "hiring"]):
+            name = f"{company} Recruiter"
+        return name, role
+
+    def _generate_linkedin_note(self, job: dict, contacts: list = None) -> str:
+        """Generates a high-conversion 300-char LinkedIn connection request note."""
+        company = job.get("company", "the team")
+        role = job.get("title", "Backend Developer")
+        first_name = "there"
+        if contacts and len(contacts) > 0:
+            first_raw = contacts[0].get("name", "").split()[0]
+            if first_raw and "Team" not in first_raw and "Recruiter" not in first_raw:
+                first_name = first_raw
+
+        note = (
+            f"Hi {first_name}, saw the {role} opening at {company}. "
+            f"With 1.8+ yrs building high-scale NestJS/Node.js/PostgreSQL APIs (300K+ users at PRYM), "
+            f"I'd love to connect and share how my backend background fits your team's goals!"
+        )
+        return note[:298]

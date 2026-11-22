@@ -54,7 +54,7 @@ class PitchGenerator:
         return kit.get("interview_prep", {})
 
     def _generate_with_gemini(self, job: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={self.api_key}"
+        candidate_models = ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-3.5-flash"]
         headers = {"Content-Type": "application/json"}
 
         prompt = f"""
@@ -94,21 +94,32 @@ Return ONLY raw JSON, without markdown code fences or backticks.
 
         payload = {
             "contents": [{"parts": [{"text": prompt}]}],
-            "generationConfig": {"temperature": 0.4, "maxOutputTokens": 2048}
+            "generationConfig": {
+                "temperature": 0.3,
+                "maxOutputTokens": 2048,
+                "responseMimeType": "application/json"
+            }
         }
 
-        resp = requests.post(url, headers=headers, json=payload, timeout=12)
-        if resp.status_code == 200:
-            text = resp.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
-            # Strip backticks if present
-            clean_text = text.strip()
-            if clean_text.startswith("```json"):
-                clean_text = clean_text[7:]
-            if clean_text.startswith("```"):
-                clean_text = clean_text[3:]
-            if clean_text.endswith("```"):
-                clean_text = clean_text[:-3]
-            return json.loads(clean_text.strip())
+        for model in candidate_models:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={self.api_key}"
+            try:
+                resp = requests.post(url, headers=headers, json=payload, timeout=15)
+                if resp.status_code == 200:
+                    text = resp.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+                    clean_text = text.strip()
+                    if clean_text.startswith("```json"):
+                        clean_text = clean_text[7:]
+                    if clean_text.startswith("```"):
+                        clean_text = clean_text[3:]
+                    if clean_text.endswith("```"):
+                        clean_text = clean_text[:-3]
+                    return json.loads(clean_text.strip())
+                else:
+                    logger.debug(f"Model {model} returned status {resp.status_code}: {resp.text[:120]}")
+            except Exception as e:
+                logger.debug(f"Model {model} request failed: {e}")
+                continue
 
         return None
 
@@ -207,3 +218,4 @@ Best regards,
             "linkedin_note": linkedin_note,
             "interview_prep": interview_prep
         }
+

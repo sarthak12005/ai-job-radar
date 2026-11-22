@@ -19,7 +19,17 @@ class handler(BaseHTTPRequestHandler):
         self._handle_request()
 
     def _handle_request(self):
-        """Manual trigger point accessible via browser, curl, webhook, or Postman."""
+        """Manual trigger point — SEC-06 Fix: requires CRON_SECRET authentication."""
+        import hmac
+        cron_secret = os.getenv("CRON_SECRET", "").strip()
+        auth_header = self.headers.get("Authorization", "").strip()
+        if not cron_secret or not hmac.compare_digest(auth_header, f"Bearer {cron_secret}"):
+            self.send_response(401)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps({"error": "Unauthorized: valid CRON_SECRET required"}).encode("utf-8"))
+            return
+
         try:
             # Run pipeline
             excel_path, matched_jobs = run_pipeline(min_score=50, send_mail=True)

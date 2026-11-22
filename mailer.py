@@ -1,4 +1,5 @@
 import os
+import html as html_mod  # SEC-07: for escaping untrusted data in HTML emails
 import smtplib
 import datetime
 from pathlib import Path
@@ -95,14 +96,20 @@ class Mailer:
         for j in top_matches:
             score = j.get("match_score", 0)
             badge_class = "badge-green" if score >= 75 else "badge-blue"
-            url = j.get("url", "#")
+            # SEC-07 Fix: escape untrusted crawled data before HTML interpolation
+            raw_url = str(j.get("url", "#"))
+            safe_url = html_mod.escape(raw_url) if raw_url.startswith(("http://", "https://")) else "#"
+            title = html_mod.escape(str(j.get('title', '')))
+            company = html_mod.escape(str(j.get('company', '')))
+            summary = html_mod.escape(str(j.get('match_summary', '')))
+            location = html_mod.escape(str(j.get('location', 'Remote')))
             html_content += f"""
                             <tr>
                                 <td><span class="{badge_class}">{score}%</span></td>
-                                <td><strong>{j.get('title', '')}</strong><br><small style="color: #64748b;">{j.get('match_summary', '')}</small></td>
-                                <td>{j.get('company', '')}</td>
-                                <td>{j.get('location', 'Remote')}</td>
-                                <td><a href="{url}" class="btn-apply" target="_blank">Direct Apply</a></td>
+                                <td><strong>{title}</strong><br><small style="color: #64748b;">{summary}</small></td>
+                                <td>{company}</td>
+                                <td>{location}</td>
+                                <td><a href="{safe_url}" class="btn-apply" target="_blank">Direct Apply</a></td>
                             </tr>
             """
 

@@ -17,14 +17,15 @@ class handler(BaseHTTPRequestHandler):
         """
         Triggered automatically by Vercel Cron every day at 08:30 AM IST (03:00 UTC).
         """
-        # Optional Cron Secret validation
-        cron_secret = os.getenv("CRON_SECRET", "")
-        auth_header = self.headers.get("Authorization", "")
-        if cron_secret and auth_header != f"Bearer {cron_secret}":
+        # SEC-05 Fix: Fail closed when CRON_SECRET is missing; use constant-time comparison
+        import hmac
+        cron_secret = os.getenv("CRON_SECRET", "").strip()
+        auth_header = self.headers.get("Authorization", "").strip()
+        if not cron_secret or not hmac.compare_digest(auth_header, f"Bearer {cron_secret}"):
             self.send_response(401)
             self.send_header("Content-Type", "application/json")
             self.end_headers()
-            self.wfile.write(json.dumps({"error": "Unauthorized cron request"}).encode("utf-8"))
+            self.wfile.write(json.dumps({"error": "Unauthorized: valid CRON_SECRET required"}).encode("utf-8"))
             return
 
         try:

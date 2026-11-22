@@ -15,6 +15,7 @@ RESUME_PATH = os.getenv("RESUME_PATH", str(BASE_DIR / "sarthak_joshi_fullstack_d
 # Vercel / Serverless Environment Detection
 IS_VERCEL = bool(os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME"))
 CRON_SECRET = os.getenv("CRON_SECRET", "")
+ADMIN_API_KEY = os.getenv("ADMIN_API_KEY", "")  # Security: required for destructive endpoints
 
 # Email / SMTP Settings
 SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")

@@ -1,4 +1,5 @@
 import os
+import re
 import datetime
 import logging
 from typing import List, Dict, Any, Optional
@@ -269,7 +270,8 @@ class Database:
                     query["$or"] = state_match["$or"]
 
         if search and search.strip():
-            s = search.strip()
+            # SEC-04 Fix: escape regex metacharacters and bound length to prevent ReDoS
+            s = re.escape(search.strip()[:100])
             regex = {"$regex": s, "$options": "i"}
             search_clause = {"$or": [
                 {"title": regex},

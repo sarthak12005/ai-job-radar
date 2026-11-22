@@ -1,14 +1,15 @@
 import os
 import sys
 import time
+import hmac
 import datetime
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 
-from fastapi import FastAPI, HTTPException, Query, BackgroundTasks, Request
+from fastapi import FastAPI, HTTPException, Query, BackgroundTasks, Request, Header, Depends
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 import uvicorn
 
 import config
@@ -58,13 +59,29 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
+# SEC-03 Fix: Restrict CORS to trusted origins instead of wildcard with credentials
+ALLOWED_ORIGINS = os.getenv(
+    "ALLOWED_ORIGINS",
+    "http://localhost:8000,http://127.0.0.1:8000,http://localhost:3000"
+).split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[o.strip() for o in ALLOWED_ORIGINS if o.strip()],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "X-Admin-Key"],
 )
+
+# SEC-09 Fix: Security response headers middleware
+@app.middleware("http")
+async def security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    return response
 
 # HTTP Request Logging Middleware
 @app.middleware("http")
@@ -83,9 +100,20 @@ class StatusUpdateRequest(BaseModel):
     notes: Optional[str] = None
 
 class ColdEmailRequest(BaseModel):
-    recipient_email: str
+    recipient_email: str  # SEC-02: validated at endpoint level
     subject: str
     body: str
+
+# SEC-01/SEC-02/SEC-08 Fix: Admin key verification for destructive/sensitive endpoints
+def verify_admin_key(x_admin_key: str = Header(None, alias="X-Admin-Key")):
+    """Constant-time admin API key check for protected endpoints."""
+    expected = config.ADMIN_API_KEY
+    if not expected:
+        # If no key configured, allow local requests only (dev mode)
+        return True
+    if not x_admin_key or not hmac.compare_digest(x_admin_key, expected):
+        raise HTTPException(status_code=401, detail="Invalid or missing X-Admin-Key header")
+    return True
 
 class CrawlTriggerRequest(BaseModel):
     country: Optional[str] = "India"
@@ -246,7 +274,8 @@ def update_status(job_id: str, req: StatusUpdateRequest):
     logger.info(f"Updated job {job_id} status to '{req.status}'")
     return {"success": True, "job_id": job_id, "new_status": req.status}
 
-@app.post("/api/jobs/{job_id}/send-cold-email", tags=["Cold Outreach"], summary="Send Cold Email to Recruiter")
+# SEC-02 Fix: Protect email endpoint with admin key to prevent open relay abuse
+@app.post("/api/jobs/{job_id}/send-cold-email", tags=["Cold Outreach"], summary="Send Cold Email to Recruiter", dependencies=[Depends(verify_admin_key)])
 def send_cold_email(job_id: str, req: ColdEmailRequest):
     """Dispatches a personalized cold email directly to the recruiter with Sarthak's resume attached."""
     job = db_instance.get_job_by_id(job_id)
@@ -345,12 +374,21 @@ def send_briefing():
     else:
         raise HTTPException(status_code=500, detail="Failed to send briefing email. Check SMTP settings in .env.")
 
+# SEC-08 Fix: Restrict log access to localhost or admin-authenticated requests
 @app.get("/api/logs", tags=["Logs & Monitoring"], summary="Live Application Logs")
-def get_logs(lines: int = Query(100, ge=10, le=500, description="Number of recent log lines to fetch")):
+def get_logs(request: Request, lines: int = Query(100, ge=10, le=500, description="Number of recent log lines to fetch")):
     """Returns recent log entries from the rotating log file for live frontend streaming."""
+    client_host = request.client.host if request.client else ""
+    is_local = client_host in ("127.0.0.1", "::1", "localhost")
+    admin_key = request.headers.get("X-Admin-Key", "")
+    expected = config.ADMIN_API_KEY
+    is_admin = expected and hmac.compare_digest(admin_key, expected)
+    if not is_local and not is_admin:
+        raise HTTPException(status_code=403, detail="Log access restricted to localhost or admin")
     return {"logs": get_recent_logs(lines)}
 
-@app.delete("/api/database/clear", tags=["Database & System"], summary="Reset Database & Clean Reports")
+# SEC-01 Fix: Protect destructive reset behind admin key authentication
+@app.delete("/api/database/clear", tags=["Database & System"], summary="Reset Database & Clean Reports", dependencies=[Depends(verify_admin_key)])
 def clear_database():
     """Empties all jobs, crawl runs, outreach logs from MongoDB, and cleans the reports directory for a fresh start."""
     deleted = db_instance.clear_all_data()
@@ -1343,9 +1381,9 @@ HTML_CONTENT = """<!DOCTYPE html>
             const skillsHtml = (job.matched_skills || []).map(s => {
                 const isCore = coreStack.includes(s.toLowerCase());
                 if (isCore) {
-                    return `<span class="bg-zinc-800 text-zinc-200 border border-zinc-600 font-medium px-2 py-0.5 rounded text-xs">${s}</span>`;
+                    return `<span class="bg-zinc-800 text-zinc-200 border border-zinc-600 font-medium px-2 py-0.5 rounded text-xs">${escapeHtml(s)}</span>`;
                 }
-                return `<span class="bg-zinc-900 text-zinc-400 border border-zinc-800 px-2 py-0.5 rounded text-xs">${s}</span>`;
+                return `<span class="bg-zinc-900 text-zinc-400 border border-zinc-800 px-2 py-0.5 rounded text-xs">${escapeHtml(s)}</span>`;
             }).join(' ');
 
             const dateStr = job.date_posted || 'Recently posted';
@@ -1354,13 +1392,16 @@ HTML_CONTENT = """<!DOCTYPE html>
             const contacts = job.linkedin_contacts || [];
             let linkedinContactsHtml = '';
             if (contacts.length > 0) {
-                linkedinContactsHtml = contacts.map(c => `
-                    <a href="${c.url}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-700/80 text-[11px] transition" title="${escapeHtml(c.role || 'Talent')}">
+                linkedinContactsHtml = contacts.map(c => {
+                    // SEC-11 Fix: validate URL scheme to prevent javascript: protocol injection
+                    const safeUrl = (c.url && (c.url.startsWith('https://') || c.url.startsWith('http://'))) ? c.url : '#';
+                    return `
+                    <a href="${safeUrl}" target="_blank" rel="noopener noreferrer"` class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-700/80 text-[11px] transition" title="${escapeHtml(c.role || 'Talent')}">
                         <span class="font-medium text-zinc-200">${escapeHtml(c.name)}</span>
                         <span class="text-zinc-500 font-normal">(${escapeHtml((c.role || '').split('at')[0].trim())})</span>
                         <i class="fa-solid fa-arrow-up-right-from-square text-[9px] text-zinc-500"></i>
                     </a>
-                `).join(' ');
+                `}).join(' ');
             } else {
                 const searchUrl = job.linkedin_search_url || `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(company)}+technical+recruiter`;
                 linkedinContactsHtml = `

@@ -28,6 +28,13 @@ RECIPIENT_EMAIL = os.getenv("RECIPIENT_EMAIL", CANDIDATE_EMAIL)
 FIRECRAWL_API_KEY = os.getenv("FIRECRAWL_API_KEY", "")
 FIRECRAWL_API_URL = os.getenv("FIRECRAWL_API_URL", "https://api.firecrawl.dev")
 
+# AI & LLM Pitch Generation (Gemini API)
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+
+# Real-Time Mobile Push Alerts (Telegram Bot)
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
+
 # Crawl & Filter Settings
 TARGET_ROLES = [
     "Backend Developer",

@@ -19,6 +19,8 @@ from main import run_pipeline
 from mailer import Mailer
 from excel_reporter import ExcelReporter
 from job_crawler import JobCrawler
+from pitch_generator import PitchGenerator
+from notifier import Notifier
 
 logger = get_logger("Server")
 
@@ -154,6 +156,16 @@ def _background_crawl(send_mail: bool = False, country: str = "India", state: Op
             "report": excel_path.name if excel_path else None
         }
         logger.info(f"Background crawl completed successfully for {country}. Found {len(matched_jobs)} matched jobs.")
+
+        # Real-time Telegram Push Notifications
+        try:
+            notifier = Notifier()
+            high_matches = [j for j in matched_jobs if j.get("match_score", 0) >= 70]
+            notifier.send_daily_summary_alert(len(matched_jobs), len(high_matches), config.CANDIDATE_NAME)
+            for top_j in [j for j in matched_jobs if j.get("match_score", 0) >= 80][:3]:
+                notifier.send_high_match_alert(top_j)
+        except Exception as notify_err:
+            logger.warning(f"Notification error: {notify_err}")
     except Exception as e:
         logger.error(f"Background crawl error: {e}")
         crawl_state["last_result"] = {"success": False, "error": str(e)}
@@ -329,6 +341,32 @@ def enrich_linkedin(job_id: str):
         "linkedin_contacts": job.get("linkedin_contacts", []),
         "linkedin_search_url": job.get("linkedin_search_url", ""),
         "linkedin_connection_note": job.get("linkedin_connection_note", "")
+    }
+
+@app.get("/api/jobs/{job_id}/outreach-kit", tags=["Cold Outreach"], summary="Get AI-Tailored Outreach Kit & Sequences")
+def get_outreach_kit(job_id: str):
+    """Generates customized Initial, Day-3, Day-7 follow-up pitches and LinkedIn notes for a specific job."""
+    job = db_instance.get_job_by_id(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    generator = PitchGenerator()
+    return generator.generate_full_kit(job)
+
+@app.get("/api/jobs/{job_id}/interview-prep", tags=["Jobs"], summary="Get Role-Specific Technical Interview Prep Kit")
+def get_interview_prep(job_id: str):
+    """Generates role-specific technical questions, architecture talking points, and answers based on job tech stack."""
+    job = db_instance.get_job_by_id(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    generator = PitchGenerator()
+    prep = generator.generate_interview_prep(job)
+    return {
+        "job_id": job_id,
+        "title": job.get("title"),
+        "company": job.get("company"),
+        "location": job.get("location"),
+        "matched_skills": job.get("matched_skills", []),
+        "prep": prep
     }
 
 @app.post("/api/trigger", tags=["Crawl Engine"], summary="Trigger Job Crawler in Background")
@@ -955,7 +993,7 @@ HTML_CONTENT = """<!DOCTYPE html>
     </div>
 
     <!-- ========================================== -->
-    <!-- Cold Outreach Modal (Issue 4 Fixed) -->
+    <!-- Cold Outreach & Follow-up Sequence Modal (Enhanced) -->
     <!-- ========================================== -->
     <div id="emailModal" role="dialog" aria-modal="true" aria-labelledby="modalCompanyHeader" tabIndex="-1" style="display: none;" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="card-surface border border-zinc-700 max-w-2xl w-full rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
@@ -964,12 +1002,26 @@ HTML_CONTENT = """<!DOCTYPE html>
                 <div class="flex items-center space-x-2.5">
                     <i class="fa-solid fa-paper-plane text-zinc-400 text-xs"></i>
                     <div>
-                        <h3 class="font-semibold text-zinc-100 text-sm">Direct Recruiter Outreach</h3>
+                        <h3 class="font-semibold text-zinc-100 text-sm">Direct Recruiter Outreach &amp; Sequence</h3>
                         <p class="text-xs text-zinc-300" id="modalCompanyHeader">Target: Recruiter</p>
                     </div>
                 </div>
                 <button onclick="closeEmailModal()" class="btn-ghost !p-1 min-h-[32px] min-w-[32px]" aria-label="Close cold email dialog">
                     <i class="fa-solid fa-xmark text-xs"></i>
+                </button>
+            </div>
+
+            <!-- Sequence Step Selector Tabs -->
+            <div class="px-5 pt-3 pb-2 bg-zinc-950 border-b border-zinc-800 flex items-center justify-between gap-2 overflow-x-auto">
+                <div class="flex items-center space-x-1.5 text-xs shrink-0" id="sequenceTabs">
+                    <button onclick="switchSequenceTab('initial')" id="tabInitial" class="btn-primary !px-2.5 !py-1 text-xs">1. Initial Pitch (Day 0)</button>
+                    <button onclick="switchSequenceTab('day3')" id="tabDay3" class="btn-secondary !px-2.5 !py-1 text-xs">2. Follow-Up (Day 3)</button>
+                    <button onclick="switchSequenceTab('day7')" id="tabDay7" class="btn-secondary !px-2.5 !py-1 text-xs">3. Final Check-in (Day 7)</button>
+                    <button onclick="switchSequenceTab('linkedin')" id="tabLinkedin" class="btn-secondary !px-2.5 !py-1 text-xs">LinkedIn Note</button>
+                </div>
+                <button onclick="regenerateOutreachKit()" id="regenBtn" class="btn-ghost !px-2.5 !py-1 text-xs text-amber-300 hover:text-amber-200 shrink-0" title="Re-generate personalized outreach kit using AI">
+                    <i class="fa-solid fa-wand-magic-sparkles mr-1"></i>
+                    <span>AI Re-craft</span>
                 </button>
             </div>
 
@@ -987,7 +1039,7 @@ HTML_CONTENT = """<!DOCTYPE html>
 
                 <div>
                     <div class="flex items-center justify-between mb-1">
-                        <label for="modalBody" class="block text-zinc-300 font-medium">Personalized Cold Pitch:</label>
+                        <label for="modalBody" class="block text-zinc-300 font-medium" id="modalPitchTitle">Personalized Cold Pitch:</label>
                         <button onclick="copyPitchText()" id="copyPitchBtn" class="btn-ghost !p-1 text-xs text-zinc-300 hover:text-zinc-100 min-h-[30px]" aria-label="Copy pitch text to clipboard">
                             <i class="fa-regular fa-copy mr-1"></i>
                             <span id="copyPitchLabel">Copy Text</span>
@@ -1012,6 +1064,78 @@ HTML_CONTENT = """<!DOCTYPE html>
                     <i class="fa-solid fa-paper-plane text-xs"></i>
                     <span>Send Cold Email Now</span>
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- Technical Interview Prep Copilot Modal (New) -->
+    <!-- ========================================== -->
+    <div id="interviewModal" role="dialog" aria-modal="true" aria-labelledby="interviewModalTitle" tabIndex="-1" style="display: none;" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="card-surface border border-zinc-700 max-w-3xl w-full rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <!-- Modal Header -->
+            <div class="px-5 py-3.5 border-b border-zinc-800 flex items-center justify-between bg-zinc-900">
+                <div class="flex items-center space-x-2.5">
+                    <i class="fa-solid fa-graduation-cap text-amber-400 text-sm"></i>
+                    <div>
+                        <h3 id="interviewModalTitle" class="font-semibold text-zinc-100 text-sm">Technical Interview Copilot</h3>
+                        <p class="text-xs text-zinc-300" id="interviewModalSub">Tailored to job stack &amp; requirements</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button onclick="copyInterviewNotes()" class="btn-ghost !p-1 min-h-[30px] text-xs text-zinc-300 hover:text-zinc-100" title="Copy full interview prep notes">
+                        <i class="fa-regular fa-copy mr-1"></i>
+                        <span id="copyInterviewLabel">Copy Notes</span>
+                    </button>
+                    <button onclick="closeInterviewModal()" class="btn-ghost !p-1 min-h-[32px] min-w-[32px]" aria-label="Close interview dialog">
+                        <i class="fa-solid fa-xmark text-xs"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modal Content Area -->
+            <div class="p-5 overflow-y-auto space-y-4 text-xs" id="interviewContent">
+                <!-- Loading State -->
+                <div id="interviewLoading" class="py-12 text-center text-zinc-400 space-y-2">
+                    <i class="fa-solid fa-circle-notch fa-spin text-2xl text-amber-400"></i>
+                    <p class="text-xs">Analyzing tech stack and generating tailored technical interview questions...</p>
+                </div>
+
+                <!-- Structured Interview Kit -->
+                <div id="interviewKit" style="display: none;" class="space-y-4">
+                    <!-- Core Focus Topics -->
+                    <div class="bg-zinc-950 p-3.5 rounded-lg border border-zinc-700">
+                        <h4 class="font-semibold text-zinc-200 text-xs mb-2 flex items-center gap-1.5">
+                            <i class="fa-solid fa-list-check text-amber-400"></i>
+                            <span>Core Focus Topics for this Role</span>
+                        </h4>
+                        <div id="interviewTopics" class="flex flex-wrap gap-1.5"></div>
+                    </div>
+
+                    <!-- Architecture Talking Points (PRYM Scale) -->
+                    <div class="bg-zinc-950 p-3.5 rounded-lg border border-zinc-700">
+                        <h4 class="font-semibold text-zinc-200 text-xs mb-2 flex items-center gap-1.5">
+                            <i class="fa-solid fa-cubes text-emerald-400"></i>
+                            <span>Architecture &amp; Scale Points from Your Resume</span>
+                        </h4>
+                        <ul id="interviewArchitecture" class="space-y-1.5 text-zinc-300 list-disc list-inside leading-relaxed"></ul>
+                    </div>
+
+                    <!-- Tailored Questions & Answers -->
+                    <div>
+                        <h4 class="font-semibold text-zinc-200 text-xs mb-2.5 flex items-center gap-1.5">
+                            <i class="fa-solid fa-circle-question text-sky-400"></i>
+                            <span>Role-Specific Technical Questions &amp; Recommended Answers</span>
+                        </h4>
+                        <div id="interviewQuestionsList" class="space-y-3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer Actions -->
+            <div class="px-5 py-3 border-t border-zinc-800 bg-zinc-900 flex items-center justify-between">
+                <span class="text-xs text-zinc-400">Tailored for Sarthak Joshi's 1.8+ yrs full stack &amp; backend profile</span>
+                <button onclick="closeInterviewModal()" class="btn-secondary">Close</button>
             </div>
         </div>
     </div>
@@ -1126,6 +1250,7 @@ HTML_CONTENT = """<!DOCTYPE html>
                     closeEmailModal();
                     closeLogsModal();
                     closeCrawlModal();
+                    closeInterviewModal();
                 }
             });
         });
@@ -1582,6 +1707,11 @@ HTML_CONTENT = """<!DOCTYPE html>
                                 <span>Career Link</span>
                             </a>
 
+                            <button onclick="openInterviewModalForJob('${job._id}')" class="btn-secondary min-h-[36px] px-3 py-1.5 text-zinc-200" title="1-Click Technical Interview Questions & Talking Points">
+                                <i class="fa-solid fa-graduation-cap text-xs text-amber-400"></i>
+                                <span>Interview Prep</span>
+                            </button>
+
                             <button onclick="openEmailModalForJob('${job._id}')" class="btn-outline min-h-[36px] px-3 py-1.5 text-zinc-200" title="Generate & send personalized recruiter cold email">
                                 <i class="fa-solid fa-paper-plane text-xs text-zinc-400"></i>
                                 <span>Cold Email</span>
@@ -1724,12 +1854,19 @@ HTML_CONTENT = """<!DOCTYPE html>
             }
         }
 
-        // Cold Outreach Modal with Accessible Focus Management (Issue 4 Fixed)
-        function openEmailModalForJob(jobId) {
+        // Multi-Step Outreach Sequence State
+        let currentOutreachKit = null;
+        let activeSequenceStep = 'initial';
+        let currentInterviewData = null;
+
+        // Cold Outreach & Follow-up Sequence Modal (Enhanced with Sequences & AI)
+        async function openEmailModalForJob(jobId) {
             const job = window.allJobsMap.get(jobId);
             if (!job) return;
             lastFocusedTrigger = document.activeElement;
             activeJobId = jobId;
+            activeSequenceStep = 'initial';
+
             document.getElementById('modalCompanyHeader').innerText = `Target Company: ${job.company || 'Company'}`;
             document.getElementById('modalRecipient').value = job.contact_email || 'careers@company.com';
             document.getElementById('modalSubject').value = job.cold_outreach_subject || `Application for ${job.title || 'Role'} - Sarthak Joshi`;
@@ -1739,6 +1876,73 @@ HTML_CONTENT = """<!DOCTYPE html>
             const modal = document.getElementById('emailModal');
             modal.style.display = 'flex';
             trapModalFocus(modal);
+
+            // Fetch AI-tailored sequence kit in background
+            try {
+                const res = await fetch(`/api/jobs/${jobId}/outreach-kit`);
+                if (res.ok) {
+                    currentOutreachKit = await res.json();
+                    switchSequenceTab('initial');
+                }
+            } catch(e) {
+                console.warn("Outreach kit fetch failed, using stored template:", e);
+            }
+        }
+
+        function switchSequenceTab(step) {
+            activeSequenceStep = step;
+            const tabs = ['initial', 'day3', 'day7', 'linkedin'];
+            tabs.forEach(t => {
+                const btn = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
+                if (btn) {
+                    btn.className = (t === step) ? 'btn-primary !px-2.5 !py-1 text-xs' : 'btn-secondary !px-2.5 !py-1 text-xs';
+                }
+            });
+
+            if (!currentOutreachKit) return;
+            const job = window.allJobsMap.get(activeJobId) || {};
+            const role = job.title || 'Role';
+            const company = job.company || 'Company';
+
+            if (step === 'initial') {
+                document.getElementById('modalSubject').value = `Application for ${role} - Sarthak Joshi`;
+                document.getElementById('modalBody').value = currentOutreachKit.initial_pitch || job.cold_outreach_body || '';
+                document.getElementById('modalPitchTitle').innerText = "Personalized Initial Pitch (Day 0):";
+            } else if (step === 'day3') {
+                document.getElementById('modalSubject').value = `Re: Application for ${role} - Sarthak Joshi`;
+                document.getElementById('modalBody').value = currentOutreachKit.followup_day3 || '';
+                document.getElementById('modalPitchTitle').innerText = "Follow-up Bump (Day 3):";
+            } else if (step === 'day7') {
+                document.getElementById('modalSubject').value = `Checking in regarding ${role} at ${company} - Sarthak Joshi`;
+                document.getElementById('modalBody').value = currentOutreachKit.followup_day7 || '';
+                document.getElementById('modalPitchTitle').innerText = "Final Value Check-in (Day 7):";
+            } else if (step === 'linkedin') {
+                document.getElementById('modalSubject').value = `LinkedIn Connection Note (${company})`;
+                document.getElementById('modalBody').value = currentOutreachKit.linkedin_note || '';
+                document.getElementById('modalPitchTitle').innerText = "LinkedIn 300-Char Connection Note:";
+            }
+        }
+
+        async function regenerateOutreachKit() {
+            if (!activeJobId) return;
+            const regenBtn = document.getElementById('regenBtn');
+            regenBtn.disabled = true;
+            regenBtn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin mr-1"></i><span>Generating...</span>`;
+            try {
+                const res = await fetch(`/api/jobs/${activeJobId}/outreach-kit`);
+                if (res.ok) {
+                    currentOutreachKit = await res.json();
+                    switchSequenceTab(activeSequenceStep);
+                    showToast("Outreach kit refreshed with fresh tailored copy!");
+                } else {
+                    showToast("Failed to refresh kit", false);
+                }
+            } catch(e) {
+                showToast("Error generating kit: " + e, false);
+            } finally {
+                regenBtn.disabled = false;
+                regenBtn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles mr-1"></i><span>AI Re-craft</span>`;
+            }
         }
 
         function closeEmailModal() {
@@ -1746,9 +1950,106 @@ HTML_CONTENT = """<!DOCTYPE html>
             modal.style.display = 'none';
             releaseModalFocus();
             activeJobId = null;
+            currentOutreachKit = null;
             if (lastFocusedTrigger && typeof lastFocusedTrigger.focus === 'function') {
                 lastFocusedTrigger.focus();
             }
+        }
+
+        // ==========================================
+        // Technical Interview Prep Copilot Functions
+        // ==========================================
+        async function openInterviewModalForJob(jobId) {
+            const job = window.allJobsMap.get(jobId);
+            if (!job) return;
+            lastFocusedTrigger = document.activeElement;
+
+            const modal = document.getElementById('interviewModal');
+            const loading = document.getElementById('interviewLoading');
+            const kit = document.getElementById('interviewKit');
+            const title = document.getElementById('interviewModalTitle');
+            const sub = document.getElementById('interviewModalSub');
+
+            title.innerText = `Technical Interview Copilot: ${job.title || 'Role'}`;
+            sub.innerText = `${job.company || 'Company'} • ${job.location || 'Remote'}`;
+            loading.style.display = 'block';
+            kit.style.display = 'none';
+            modal.style.display = 'flex';
+            trapModalFocus(modal);
+
+            try {
+                const res = await fetch(`/api/jobs/${jobId}/interview-prep`);
+                const data = await res.json();
+                currentInterviewData = data;
+                renderInterviewKit(data);
+                loading.style.display = 'none';
+                kit.style.display = 'block';
+            } catch (e) {
+                loading.innerHTML = `<p class="text-rose-400">Failed to generate interview prep kit: ${e}</p>`;
+            }
+        }
+
+        function renderInterviewKit(data) {
+            const prep = data.prep || {};
+            // 1. Core Topics
+            const topicsContainer = document.getElementById('interviewTopics');
+            const topics = prep.core_topics || [];
+            topicsContainer.innerHTML = topics.map(t => 
+                `<span class="bg-zinc-800 text-zinc-200 border border-zinc-700 px-2.5 py-1 rounded text-xs">${escapeHtml(t)}</span>`
+            ).join(' ');
+
+            // 2. Architecture Talking Points
+            const archList = document.getElementById('interviewArchitecture');
+            const archPoints = prep.architecture_talking_points || [];
+            archList.innerHTML = archPoints.map(p => 
+                `<li>${escapeHtml(p)}</li>`
+            ).join('');
+
+            // 3. Questions & Answers
+            const qList = document.getElementById('interviewQuestionsList');
+            const questions = prep.questions || [];
+            qList.innerHTML = questions.map((q, idx) => `
+                <div class="card-surface p-3.5 rounded-lg border border-zinc-700 space-y-2">
+                    <div class="flex items-start gap-2">
+                        <span class="w-5 h-5 rounded-full bg-amber-500/20 text-amber-300 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">${idx + 1}</span>
+                        <div class="font-semibold text-zinc-100 text-xs leading-snug">${escapeHtml(q.question)}</div>
+                    </div>
+                    <div class="pl-7 space-y-1.5 text-xs">
+                        <p class="text-zinc-400 italic"><span class="text-zinc-500 font-medium not-italic">Why they ask:</span> ${escapeHtml(q.rationale)}</p>
+                        <div class="bg-zinc-900/90 p-2.5 rounded border border-zinc-800 text-zinc-200 leading-relaxed">
+                            <span class="text-emerald-400 font-medium">Recommended Talking Points:</span> ${escapeHtml(q.recommended_answer)}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function closeInterviewModal() {
+            const modal = document.getElementById('interviewModal');
+            modal.style.display = 'none';
+            releaseModalFocus();
+            if (lastFocusedTrigger && typeof lastFocusedTrigger.focus === 'function') {
+                lastFocusedTrigger.focus();
+            }
+        }
+
+        function copyInterviewNotes() {
+            if (!currentInterviewData) return;
+            const prep = currentInterviewData.prep || {};
+            let text = `TECHNICAL INTERVIEW PREPARATION KIT\nRole: ${currentInterviewData.title}\nCompany: ${currentInterviewData.company}\n\n`;
+            text += `CORE FOCUS TOPICS:\n- ${(prep.core_topics || []).join('\n- ')}\n\n`;
+            text += `ARCHITECTURE & SCALE TALKING POINTS:\n- ${(prep.architecture_talking_points || []).join('\n- ')}\n\n`;
+            text += `SAMPLE TECHNICAL QUESTIONS & ANSWERS:\n`;
+            (prep.questions || []).forEach((q, idx) => {
+                text += `\nQ${idx+1}: ${q.question}\nRationale: ${q.rationale}\nTalking Points: ${q.recommended_answer}\n`;
+            });
+
+            navigator.clipboard.writeText(text).then(() => {
+                const label = document.getElementById('copyInterviewLabel');
+                label.innerText = "Copied!";
+                setTimeout(() => { label.innerText = "Copy Notes"; }, 2000);
+                showToast("Complete interview notes copied to clipboard!");
+            });
         }
 
         function copyPitchText() {

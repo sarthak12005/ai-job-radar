@@ -12,6 +12,7 @@ from job_matcher import JobMatcher
 from excel_reporter import ExcelReporter
 from mailer import Mailer
 from database import db_instance
+from notifier import Notifier
 
 logger = get_logger("DailyJobRunner")
 
@@ -65,6 +66,18 @@ def run_pipeline(min_score: int = 50, send_mail: bool = True, target_country: st
         })
     except Exception as e:
         logger.warning(f"MongoDB sync error: {e}")
+
+    # 3.6 Telegram Push Notifications for High Matches (>= 75%)
+    try:
+        notifier = Notifier()
+        if notifier.is_configured():
+            high_matches = [j for j in matched_jobs if j.get("match_score", 0) >= 75]
+            if high_matches:
+                logger.info(f"Sending Telegram alerts for {len(high_matches)} prime opportunities...")
+                for hj in high_matches[:5]:
+                    notifier.send_high_match_alert(hj)
+    except Exception as e:
+        logger.warning(f"Telegram notification error: {e}")
 
     # 4. Generate Excel Report
     logger.info("Step 4: Generating styled Excel Workbook...")

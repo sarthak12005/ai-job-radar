@@ -33,12 +33,31 @@ class Database:
             # Create indexes
             self.jobs_col.create_index([("url", pymongo.ASCENDING)], unique=True)
             self.jobs_col.create_index([("match_score", pymongo.DESCENDING)])
+            self.jobs_col.create_index([("country", pymongo.ASCENDING)])
             self.jobs_col.create_index([("company", pymongo.ASCENDING)])
             self.jobs_col.create_index([("status", pymongo.ASCENDING)])
             self.jobs_col.create_index([("created_at", pymongo.DESCENDING)])
             logger.info(f"Connected to MongoDB database '{self.db_name}' successfully.")
+            self._backfill_countries()
         except Exception as e:
             logger.error(f"Failed to connect to MongoDB: {e}")
+
+    def _backfill_countries(self):
+        """Backfills country field for any documents missing normalized country categorization."""
+        try:
+            if self.jobs_col is None:
+                return
+            missing = list(self.jobs_col.find({"country": {"$exists": False}}, {"_id": 1, "location": 1}))
+            if missing:
+                updates = []
+                for doc in missing:
+                    c = config.detect_country(doc.get("location", ""))
+                    updates.append(UpdateOne({"_id": doc["_id"]}, {"$set": {"country": c}}))
+                if updates:
+                    self.jobs_col.bulk_write(updates, ordered=False)
+                    logger.info(f"Backfilled country field for {len(updates)} existing jobs.")
+        except Exception as e:
+            logger.debug(f"Country backfill note: {e}")
 
     def is_connected(self) -> bool:
         if not self.client:
@@ -79,11 +98,17 @@ class Database:
             if not url:
                 continue
 
+            loc_val = job.get("location", "Remote")
+            country_val = job.get("country") or config.detect_country(loc_val)
+            state_val = job.get("state", "")
+
             # Update document fields
             set_fields = {
                 "title": job.get("title"),
                 "company": job.get("company"),
-                "location": job.get("location", "Remote"),
+                "location": loc_val,
+                "country": country_val,
+                "state": state_val,
                 "match_score": job.get("match_score", 0),
                 "match_summary": job.get("match_summary", ""),
                 "matched_skills": job.get("matched_skills", []),
@@ -125,13 +150,15 @@ class Database:
         self,
         search: Optional[str] = None,
         status: Optional[str] = None,
+        country: Optional[str] = None,
+        state: Optional[str] = None,
         min_score: int = 0,
         sort_by: str = "match_score",
         sort_order: int = -1,
         limit: int = 10,
         skip: int = 0
     ) -> Dict[str, Any]:
-        """Fetches jobs with flexible search, filtering, and structured pagination."""
+        """Fetches jobs with flexible search, location filtering, and structured pagination."""
         if self.jobs_col is None:
             return {
                 "jobs": [],
@@ -152,16 +179,67 @@ class Database:
         if status and status.lower() != "all":
             query["status"] = status.lower()
 
+        # Country Filter
+        if country and country.lower() not in ["all", "any", "all countries", ""]:
+            c_norm = country.strip()
+            if c_norm.lower() == "india":
+                query["$or"] = [
+                    {"country": "India"},
+                    {"location": {"$regex": r"india|pune|bangalore|bengaluru|mumbai|hyderabad|noida|gurgaon|gurugram|delhi|chennai", "$options": "i"}}
+                ]
+            elif c_norm.lower() in ["united states", "us", "usa"]:
+                query["$or"] = [
+                    {"country": "United States"},
+                    {"location": {"$regex": r"united states|usa|\bus\b|san francisco|chicago|seattle|austin|new york|toronto|canada", "$options": "i"}}
+                ]
+            elif c_norm.lower() in ["europe", "eu", "uk"]:
+                query["$or"] = [
+                    {"country": "Europe"},
+                    {"location": {"$regex": r"europe|uk|united kingdom|london|berlin|germany|spain|poland|amsterdam", "$options": "i"}}
+                ]
+            elif c_norm.lower() in ["remote", "worldwide"]:
+                query["$or"] = [
+                    {"country": "Remote"},
+                    {"location": {"$regex": r"worldwide|anywhere|global|\bremote\b", "$options": "i"}}
+                ]
+            else:
+                query["country"] = c_norm
+
+        # State / Tech Hub Filter
+        if state and state.lower() not in ["all", "all india", "all us", "all europe", "any location", "any remote", ""]:
+            clean_state = state.split("(")[0].strip()
+            clean_state = clean_state.replace("Remote", "").strip()
+            if not clean_state and "remote" in state.lower():
+                clean_state = "remote"
+            
+            if clean_state:
+                state_pattern = {"$regex": clean_state, "$options": "i"}
+                state_match = {"$or": [{"location": state_pattern}, {"state": state_pattern}]}
+                if "$or" in query:
+                    existing_or = query.pop("$or")
+                    query["$and"] = [{"$or": existing_or}, state_match]
+                elif "$and" in query:
+                    query["$and"].append(state_match)
+                else:
+                    query["$or"] = state_match["$or"]
+
         if search and search.strip():
             s = search.strip()
             regex = {"$regex": s, "$options": "i"}
-            query["$or"] = [
+            search_clause = {"$or": [
                 {"title": regex},
                 {"company": regex},
                 {"location": regex},
                 {"matched_skills": regex},
                 {"match_summary": regex}
-            ]
+            ]}
+            if "$and" in query:
+                query["$and"].append(search_clause)
+            elif "$or" in query:
+                existing_or = query.pop("$or")
+                query["$and"] = [{"$or": existing_or}, search_clause]
+            else:
+                query["$or"] = search_clause["$or"]
 
         # Sorting
         sort_field = "match_score" if sort_by == "match_score" else ("created_at" if sort_by == "date" else "company")

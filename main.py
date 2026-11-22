@@ -15,10 +15,11 @@ from database import db_instance
 
 logger = get_logger("DailyJobRunner")
 
-def run_pipeline(min_score: int = 50, send_mail: bool = True):
+def run_pipeline(min_score: int = 50, send_mail: bool = True, target_country: str = "India", target_state: str = None):
     logger.info("==================================================")
     logger.info("🚀 Starting Daily Job Match Pipeline")
     logger.info(f"Candidate: {config.CANDIDATE_NAME} ({config.CANDIDATE_EMAIL})")
+    logger.info(f"Targeting: Country={target_country}, State/Hub={target_state or 'All'}")
     logger.info("==================================================")
 
     # 1. Parse Resume
@@ -28,21 +29,21 @@ def run_pipeline(min_score: int = 50, send_mail: bool = True):
     logger.info(f"Targeting: {profile.get('title')} with {len(profile.get('core_skills', []))} core skills")
 
     # 2. Crawl Jobs
-    logger.info("Step 2: Crawling recent jobs from ATS, APIs, and portals...")
+    logger.info(f"Step 2: Crawling recent jobs for {target_country} ({target_state or 'All'})...")
     crawler = JobCrawler()
-    raw_jobs = crawler.crawl_all()
+    raw_jobs = crawler.crawl_all(target_country=target_country, target_state=target_state)
     logger.info(f"Total raw jobs retrieved: {len(raw_jobs)}")
 
     if not raw_jobs:
         logger.warning("No jobs returned. Retrying with broad discovery...")
 
     # 3. Match & Score
-    logger.info("Step 3: Scoring jobs against candidate resume...")
+    logger.info(f"Step 3: Scoring jobs against candidate resume (Location target: {target_country})...")
     matcher = JobMatcher(profile)
     matched_jobs = []
     
     for job in raw_jobs:
-        match_info = matcher.calculate_match(job)
+        match_info = matcher.calculate_match(job, target_country=target_country, target_state=target_state)
         job.update(match_info)
         if job.get("match_score", 0) >= min_score:
             matched_jobs.append(job)
@@ -92,11 +93,13 @@ def run_pipeline(min_score: int = 50, send_mail: bool = True):
 def main():
     parser = argparse.ArgumentParser(description="Automated Daily Job Matcher & Emailer")
     parser.add_argument("--min-score", type=int, default=50, help="Minimum match score (0-100)")
+    parser.add_argument("--country", type=str, default="India", help="Target country (e.g. India, United States, Europe, All)")
+    parser.add_argument("--state", type=str, default=None, help="Target state or city hub (e.g. Pune, Bangalore, Mumbai)")
     parser.add_argument("--no-mail", action="store_true", help="Skip sending email")
     parser.add_argument("--test", action="store_true", help="Run quick test cycle")
     args = parser.parse_args()
 
-    run_pipeline(min_score=args.min_score, send_mail=not args.no_mail)
+    run_pipeline(min_score=args.min_score, send_mail=not args.no_mail, target_country=args.country, target_state=args.state)
 
 if __name__ == "__main__":
     main()

@@ -7,14 +7,14 @@ class JobMatcher:
         self.skills = [s.lower() for s in candidate_profile.get("core_skills", [])]
         self.candidate_exp = candidate_profile.get("experience_years", 1.8)
 
-    def calculate_match(self, job: Dict[str, Any]) -> Dict[str, Any]:
+    def calculate_match(self, job: Dict[str, Any], target_country: str = "India", target_state: str = None) -> Dict[str, Any]:
         """
         Calculates match score (0-100%) between job posting and Sarthak's resume.
         Breakdown:
         - Title / Role fit: 30 pts
         - Skill overlap: 45 pts
         - Experience suitability: 15 pts
-        - Location / Remote match: 10 pts
+        - Location / Remote match: 10 pts (calibrated to target country and hub)
         """
         title = (job.get("title") or "").lower()
         desc = (job.get("description") or "").lower()
@@ -97,11 +97,36 @@ class JobMatcher:
 
         # 4. Location Match (Max 10)
         loc_score = 5
-        preferred_locs = ["pune", "bangalore", "bengaluru", "mumbai", "hyderabad", "remote", "anywhere", "india"]
-        for pl in preferred_locs:
-            if pl in location or pl in combined_text:
+        loc_tag = "Remote / Flex"
+
+        # Check geo restrictions
+        is_geo_restricted_away = any(gr in location for gr in ["usa only", "us only", "europe only", "uk only", "americas only", "canada only", "latam only", "eu only"])
+
+        if target_country and target_country.lower() == "india":
+            india_hubs = ["pune", "bangalore", "bengaluru", "mumbai", "hyderabad", "noida", "gurgaon", "gurugram", "delhi", "chennai"]
+            if any(h in location for h in india_hubs):
                 loc_score = 10
-                break
+                loc_tag = "India Tech Hub"
+            elif "india" in location:
+                loc_score = 10
+                loc_tag = "India"
+            elif any(rw in location for rw in ["worldwide", "anywhere", "global"]) or (location == "remote" and not is_geo_restricted_away):
+                loc_score = 8
+                loc_tag = "Worldwide Remote"
+            elif is_geo_restricted_away or any(c in location for c in ["spain", "poland", "london", "costa rica", "canada", "toronto", "germany", "berlin", "us-remote"]):
+                loc_score = 0
+                seniority_adj -= 15  # Penalize non-India roles when user wants India
+                loc_tag = "Non-India (Outside Scope)"
+            else:
+                loc_score = 4
+                loc_tag = "Unspecified Location"
+
+        # Check specific state/hub preference
+        if target_state and target_state.lower() not in ["all", "all india", "all us", "any location", "any remote", ""]:
+            clean_ts = target_state.split("(")[0].strip().lower()
+            if clean_ts and clean_ts in location:
+                loc_score = 10
+                loc_tag = f"{clean_ts.title()} Hub Direct"
 
         total_score = max(0, min(100, title_score + skill_score + exp_score + loc_score + seniority_adj))
 
@@ -118,6 +143,7 @@ class JobMatcher:
             summary_parts.append(f"Stack: {', '.join(high_matches[:4])}")
         if min_req is not None:
             summary_parts.append(f"Req Exp: {min_req}+ yrs (You: {self.candidate_exp} yrs)")
+        summary_parts.append(f"📍 {loc_tag}")
         
         match_summary = " | ".join(summary_parts) if summary_parts else "Role aligns with Backend / Full Stack profile"
 

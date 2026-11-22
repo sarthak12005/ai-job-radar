@@ -21,21 +21,21 @@ class JobCrawler:
             "Accept": "application/json, text/html, */*"
         })
 
-    def crawl_all(self, target_roles=None, days_back=2) -> list:
-        """Crawls all sources concurrently for jobs posted recently (past 1-2 days)."""
+    def crawl_all(self, target_roles=None, days_back=2, target_country="India", target_state=None) -> list:
+        """Crawls all sources concurrently for jobs matching target country, state, and roles."""
         roles = target_roles or config.TARGET_ROLES
         all_jobs = []
 
-        logger.info("Starting concurrent job crawl across sources...")
+        logger.info(f"Starting concurrent job crawl: country={target_country}, state={target_state or 'All'} across sources...")
         tasks = [
-            ("Remotive", self._crawl_remotive),
-            ("Jobicy", self._crawl_jobicy),
-            ("RemoteOK", self._crawl_remoteok),
-            ("ATS Career Pages", self._crawl_ats_career_pages)
+            ("Remotive", lambda: self._crawl_remotive(target_country=target_country)),
+            ("Jobicy", lambda: self._crawl_jobicy(target_country=target_country)),
+            ("RemoteOK", lambda: self._crawl_remoteok(target_country=target_country)),
+            ("ATS Career Pages", lambda: self._crawl_ats_career_pages(target_country=target_country, target_state=target_state))
         ]
 
         if self.firecrawl_key:
-            tasks.append(("Firecrawl", self._crawl_with_firecrawl))
+            tasks.append(("Firecrawl", lambda: self._crawl_with_firecrawl(target_country=target_country, target_state=target_state)))
 
         with ThreadPoolExecutor(max_workers=5) as executor:
             future_to_source = {executor.submit(func): name for name, func in tasks}
@@ -61,6 +61,10 @@ class JobCrawler:
                 if url_key:
                     seen.add(url_key)
                 
+                # Assign normalized country if not present
+                if not j.get("country"):
+                    j["country"] = config.detect_country(j.get("location", ""))
+                
                 # Enrich with HR / Recruiter email contact if missing
                 self._enrich_contact_email(j)
                 deduped.append(j)
@@ -68,8 +72,8 @@ class JobCrawler:
         logger.info(f"Total unique recent jobs collected: {len(deduped)}")
         return deduped
 
-    def _crawl_remotive(self) -> list:
-        """Fetches software-dev jobs from Remotive."""
+    def _crawl_remotive(self, target_country: str = "India") -> list:
+        """Fetches software-dev jobs from Remotive, filtering geo-restrictions."""
         jobs = []
         url = "https://remotive.com/api/remote-jobs?category=software-dev&limit=40"
         resp = self.session.get(url, timeout=12)
@@ -81,6 +85,13 @@ class JobCrawler:
                 desc = item.get("description", "")
                 company = item.get("company_name", "")
                 pub_date = item.get("publication_date", "")[:10]
+                loc = item.get("candidate_required_location", "Remote")
+                loc_l = loc.lower()
+
+                # If user targets India, exclude roles strictly restricted to non-India regions
+                if target_country and target_country.lower() == "india":
+                    if any(c in loc_l for c in ["usa only", "us only", "europe only", "uk only", "americas only", "canada only", "latam only", "eu only"]):
+                        continue
                 
                 # Check keyword relevance
                 t_lower = title.lower()
@@ -88,7 +99,8 @@ class JobCrawler:
                     jobs.append({
                         "title": title,
                         "company": company,
-                        "location": item.get("candidate_required_location", "Remote"),
+                        "location": loc,
+                        "country": config.detect_country(loc),
                         "url": item.get("url", ""),
                         "date_posted": pub_date or datetime.date.today().isoformat(),
                         "description": BeautifulSoup(desc, "html.parser").get_text()[:600],
@@ -96,8 +108,8 @@ class JobCrawler:
                     })
         return jobs
 
-    def _crawl_jobicy(self) -> list:
-        """Fetches jobs from Jobicy API."""
+    def _crawl_jobicy(self, target_country: str = "India") -> list:
+        """Fetches jobs from Jobicy API, filtering geo-restrictions."""
         jobs = []
         url = "https://jobicy.com/api/v2/remote-jobs?count=40&industry=engineering"
         resp = self.session.get(url, timeout=12)
@@ -108,13 +120,20 @@ class JobCrawler:
                 desc = item.get("jobDescription", "")
                 company = item.get("companyName", "")
                 pub_date = item.get("pubDate", "")[:10]
-                t_lower = title.lower()
+                loc = item.get("jobGeo", "Remote")
+                loc_l = loc.lower()
 
+                if target_country and target_country.lower() == "india":
+                    if any(c in loc_l for c in ["usa", "europe", "uk", "canada", "emea", "latam"]) and "anywhere" not in loc_l:
+                        continue
+
+                t_lower = title.lower()
                 if any(k in t_lower for k in ["node", "nest", "backend", "typescript", "full stack", "fullstack", "software engineer", "developer"]):
                     jobs.append({
                         "title": title,
                         "company": company,
-                        "location": item.get("jobGeo", "Remote"),
+                        "location": loc,
+                        "country": config.detect_country(loc),
                         "url": item.get("url", ""),
                         "date_posted": pub_date or datetime.date.today().isoformat(),
                         "description": BeautifulSoup(desc, "html.parser").get_text()[:600],
@@ -122,8 +141,8 @@ class JobCrawler:
                     })
         return jobs
 
-    def _crawl_remoteok(self) -> list:
-        """Fetches jobs from RemoteOK API."""
+    def _crawl_remoteok(self, target_country: str = "India") -> list:
+        """Fetches jobs from RemoteOK API, filtering out non-target locations."""
         jobs = []
         url = "https://remoteok.com/api"
         resp = self.session.get(url, timeout=12)
@@ -137,13 +156,20 @@ class JobCrawler:
                     desc = item.get("description", "")
                     company = item.get("company", "")
                     date_str = item.get("date", "")[:10]
-                    t_lower = title.lower()
+                    loc = item.get("location", "Remote")
+                    loc_l = loc.lower()
 
+                    if target_country and target_country.lower() == "india":
+                        if any(c in loc_l for c in ["spain", "poland", "london", "costa rica", "canada", "toronto", "germany", "berlin", "us-remote", "chicago", "seattle"]):
+                            continue
+
+                    t_lower = title.lower()
                     if any(k in t_lower or k in tags for k in ["node", "nest", "backend", "typescript", "fullstack", "postgres"]):
                         jobs.append({
                             "title": title,
                             "company": company,
-                            "location": item.get("location", "Remote"),
+                            "location": loc,
+                            "country": config.detect_country(loc),
                             "url": item.get("url", ""),
                             "date_posted": date_str or datetime.date.today().isoformat(),
                             "description": BeautifulSoup(desc, "html.parser").get_text()[:600],
@@ -151,10 +177,10 @@ class JobCrawler:
                         })
         return jobs
 
-    def _crawl_ats_career_pages(self) -> list:
+    def _crawl_ats_career_pages(self, target_country: str = "India", target_state: str = None) -> list:
         """
-        Crawls popular company career pages using Greenhouse ATS endpoints
-        frequently hiring tech talent in India and globally (concurrently).
+        Crawls popular company career pages using Greenhouse ATS endpoints,
+        filtering locations according to user preferences.
         """
         ats_targets = [
             {"type": "greenhouse", "company": "Stripe", "url": "https://boards-api.greenhouse.io/v1/boards/stripe/jobs"},
@@ -178,11 +204,19 @@ class JobCrawler:
                         title = item.get("title", "")
                         t_lower = title.lower()
                         loc = item.get("location", {}).get("name", "India / Remote")
+                        loc_l = loc.lower()
+
+                        if target_country and target_country.lower() == "india":
+                            # Skip if explicit foreign city without India / Remote option
+                            if any(c in loc_l for c in ["san francisco", "new york", "seattle", "austin", "london", "dublin", "paris", "berlin", "tokyo", "sydney", "madrid", "toronto"]) and "india" not in loc_l and "remote" not in loc_l:
+                                continue
+
                         if any(k in t_lower for k in ["backend", "node", "nest", "typescript", "full stack", "fullstack", "software engineer", "api"]):
                             target_jobs.append({
                                 "title": title,
                                 "company": target["company"],
                                 "location": loc,
+                                "country": config.detect_country(loc),
                                 "url": item.get("absolute_url", ""),
                                 "date_posted": datetime.date.today().isoformat(),
                                 "description": f"Position: {title} at {target['company']}",
@@ -199,20 +233,43 @@ class JobCrawler:
                 all_ats.extend(f.result())
         return all_ats
 
-    def _crawl_with_firecrawl(self) -> list:
+    def _crawl_with_firecrawl(self, target_country: str = "India", target_state: str = None) -> list:
         """
         Uses Firecrawl API to search for live career postings
-        matching Sarthak's stack on company portals.
+        matching user's stack and targeted location (country & state/hub).
         """
         jobs = []
         headers = {
             "Authorization": f"Bearer {self.firecrawl_key}",
             "Content-Type": "application/json"
         }
-        queries = [
-            'site:lever.co "Node.js" OR "NestJS" developer',
-            'site:greenhouse.io "Backend Developer" "TypeScript" Bangalore OR Remote'
-        ]
+
+        # Build dynamic location queries
+        if target_country and target_country.lower() == "india":
+            hub_kw = "India OR Pune OR Bangalore OR Bengaluru OR Mumbai OR Hyderabad OR Remote"
+            if target_state and target_state.lower() not in ["all", "all india", "any location", "any remote"]:
+                clean_s = target_state.split("(")[0].strip()
+                if clean_s:
+                    hub_kw = f'"{clean_s}" OR India'
+            queries = [
+                f'site:lever.co ("Node.js" OR "NestJS" OR "Backend Developer") ({hub_kw})',
+                f'site:greenhouse.io ("Backend Developer" OR "TypeScript") ({hub_kw})'
+            ]
+        elif target_country and target_country.lower() in ["united states", "us"]:
+            queries = [
+                'site:lever.co ("Node.js" OR "NestJS") ("United States" OR "Remote US")',
+                'site:greenhouse.io ("Backend Developer" OR "TypeScript") ("United States" OR "Remote")'
+            ]
+        elif target_country and target_country.lower() in ["europe", "eu", "uk"]:
+            queries = [
+                'site:lever.co ("Node.js" OR "NestJS") ("Europe" OR "UK" OR "London")',
+                'site:greenhouse.io ("Backend Developer" OR "TypeScript") ("Europe" OR "UK")'
+            ]
+        else:
+            queries = [
+                'site:lever.co "Node.js" OR "NestJS" developer',
+                'site:greenhouse.io "Backend Developer" "TypeScript" Remote'
+            ]
 
         for query in queries:
             payload = {
@@ -229,10 +286,12 @@ class JobCrawler:
                         desc = item.get("description", "")
                         company = self._extract_company_from_url(url)
                         if url and any(k in (title + desc).lower() for k in ["node", "nest", "typescript", "backend", "full stack"]):
+                            loc_display = f"{target_state or 'India'} / Remote" if (target_country == "India") else "Remote / Global"
                             jobs.append({
                                 "title": title or "Backend Developer",
                                 "company": company,
-                                "location": "Remote / India",
+                                "location": loc_display,
+                                "country": target_country if target_country != "All" else config.detect_country(loc_display),
                                 "url": url,
                                 "date_posted": datetime.date.today().isoformat(),
                                 "description": desc[:600],

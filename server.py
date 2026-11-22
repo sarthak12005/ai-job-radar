@@ -86,13 +86,21 @@ class ColdEmailRequest(BaseModel):
     subject: str
     body: str
 
+class CrawlTriggerRequest(BaseModel):
+    country: Optional[str] = "India"
+    state: Optional[str] = None
+    min_score: Optional[int] = 50
+    send_mail: Optional[bool] = False
+
 import threading
 
 # In-memory crawl and scheduler status
 crawl_state = {
     "is_running": False,
     "last_run": None,
-    "last_result": None
+    "last_result": None,
+    "active_country": "India",
+    "active_state": "All"
 }
 
 scheduler_state = {
@@ -101,18 +109,22 @@ scheduler_state = {
     "active": True
 }
 
-def _background_crawl(send_mail: bool = False):
+def _background_crawl(send_mail: bool = False, country: str = "India", state: Optional[str] = None, min_score: int = 50):
     crawl_state["is_running"] = True
-    logger.info(f"Background crawl task started (send_mail={send_mail}).")
+    crawl_state["active_country"] = country
+    crawl_state["active_state"] = state or "All"
+    logger.info(f"Background crawl task started (country={country}, state={state}, send_mail={send_mail}).")
     try:
-        excel_path, matched_jobs = run_pipeline(min_score=50, send_mail=send_mail)
+        excel_path, matched_jobs = run_pipeline(min_score=min_score, send_mail=send_mail, target_country=country, target_state=state)
         crawl_state["last_run"] = datetime.datetime.now().isoformat()
         crawl_state["last_result"] = {
             "success": True,
             "jobs_count": len(matched_jobs),
+            "country": country,
+            "state": state or "All",
             "report": excel_path.name if excel_path else None
         }
-        logger.info(f"Background crawl completed successfully. Found {len(matched_jobs)} matched jobs.")
+        logger.info(f"Background crawl completed successfully for {country}. Found {len(matched_jobs)} matched jobs.")
     except Exception as e:
         logger.error(f"Background crawl error: {e}")
         crawl_state["last_result"] = {"success": False, "error": str(e)}
@@ -178,10 +190,21 @@ def get_stats():
     """Returns application funnel metrics, high match counts, and distinct company count."""
     return db_instance.get_stats()
 
+@app.get("/api/locations", tags=["Jobs"], summary="Get Supported Countries and Tech Hubs")
+def get_locations():
+    """Returns available target countries and their respective states / tech hubs for targeted job discovery."""
+    return {
+        "default_country": config.DEFAULT_TARGET_COUNTRY,
+        "default_state": config.DEFAULT_TARGET_STATE,
+        "locations": config.SUPPORTED_LOCATIONS
+    }
+
 @app.get("/api/jobs", tags=["Jobs"], summary="List & Filter Matched Jobs with Pagination")
 def get_jobs(
     search: Optional[str] = Query(None, description="Search term matching title, company, skills, or summary"),
     status: Optional[str] = Query(None, description="Status filter: all, new, applied, contacted, interviewing, saved, rejected"),
+    country: Optional[str] = Query(None, description="Country filter: India, United States, Europe, Remote, All"),
+    state: Optional[str] = Query(None, description="State or City hub filter (e.g. Pune, Bangalore, Mumbai)"),
     min_score: int = Query(0, ge=0, le=100, description="Minimum match score (0-100)"),
     sort_by: str = Query("match_score", description="Sort field: match_score, date, or company"),
     sort_order: int = Query(-1, description="-1 for descending, 1 for ascending"),
@@ -196,6 +219,8 @@ def get_jobs(
     return db_instance.get_jobs(
         search=search,
         status=status,
+        country=country,
+        state=state,
         min_score=min_score,
         sort_by=sort_by,
         sort_order=sort_order,
@@ -252,13 +277,23 @@ def send_cold_email(job_id: str, req: ColdEmailRequest):
         raise HTTPException(status_code=500, detail=res.get("error", "Failed to dispatch email"))
 
 @app.post("/api/trigger", tags=["Crawl Engine"], summary="Trigger Job Crawler in Background")
-def trigger_crawl(background_tasks: BackgroundTasks):
-    """Triggers the job crawler asynchronously across Firecrawl, ATS, and remote portals."""
+def trigger_crawl(background_tasks: BackgroundTasks, req: Optional[CrawlTriggerRequest] = None):
+    """Triggers the job crawler asynchronously across Firecrawl, ATS, and remote portals with country and state targeting."""
     if crawl_state["is_running"]:
         return {"status": "busy", "message": "Job crawl is already currently executing in background."}
 
-    background_tasks.add_task(_background_crawl)
-    return {"status": "started", "message": "Job crawler triggered in background. Database will update automatically."}
+    country = req.country if (req and req.country) else "India"
+    state = req.state if req else None
+    min_score = req.min_score if (req and req.min_score is not None) else 50
+    send_mail = req.send_mail if (req and req.send_mail is not None) else False
+
+    background_tasks.add_task(_background_crawl, send_mail=send_mail, country=country, state=state, min_score=min_score)
+    return {
+        "status": "started",
+        "country": country,
+        "state": state or "All Hubs",
+        "message": f"Job crawler triggered in background for {country} ({state or 'All Hubs'}). Database will update automatically."
+    }
 
 @app.get("/api/trigger/status", tags=["Crawl Engine"], summary="Check Crawl Job Status")
 def trigger_status():
@@ -518,7 +553,7 @@ HTML_CONTENT = """<!DOCTYPE html>
                 </a>
 
                 <!-- 1-Click Job Crawler Button -->
-                <button onclick="triggerCrawl()" id="triggerBtn" class="btn-primary" title="Trigger background crawler across ATS portals and Firecrawl">
+                <button onclick="openCrawlModal()" id="triggerBtn" class="btn-primary" title="Configure target country and trigger live job discovery">
                     <i class="fa-solid fa-arrows-rotate text-xs" id="triggerIcon"></i>
                     <span>Crawl Jobs</span>
                 </button>
@@ -651,6 +686,36 @@ HTML_CONTENT = """<!DOCTYPE html>
                     <button id="clearSearchBtn" onclick="clearSearch()" style="display: none;" class="btn-ghost absolute right-2 top-2 text-xs" aria-label="Clear search">
                         <i class="fa-solid fa-circle-xmark"></i>
                     </button>
+                </div>
+
+                <!-- Country & State / Hub Selectors -->
+                <div class="flex flex-wrap items-center gap-2 bg-zinc-950 p-1.5 rounded-lg border border-zinc-800">
+                    <div class="flex items-center space-x-1.5">
+                        <i class="fa-solid fa-earth-americas text-zinc-400 text-xs ml-1"></i>
+                        <span class="text-xs text-zinc-400 font-medium">Country:</span>
+                        <select id="countryFilter" onchange="onCountryChange()" class="bg-zinc-900 border border-zinc-700/80 rounded-md px-2 py-1 text-xs text-zinc-100 font-medium focus:border-zinc-500 focus:outline-none cursor-pointer">
+                            <option value="India" selected>India 🇮🇳</option>
+                            <option value="United States">United States 🇺🇸</option>
+                            <option value="Europe">Europe / UK 🇪🇺</option>
+                            <option value="Remote">Worldwide Remote 🌐</option>
+                            <option value="All">All Countries</option>
+                        </select>
+                    </div>
+
+                    <div class="flex items-center space-x-1.5 border-l border-zinc-800 pl-2" id="stateFilterContainer">
+                        <i class="fa-solid fa-location-dot text-zinc-400 text-xs"></i>
+                        <span class="text-xs text-zinc-400 font-medium">Hub:</span>
+                        <select id="stateFilter" onchange="onStateChange()" class="bg-zinc-900 border border-zinc-700/80 rounded-md px-2 py-1 text-xs text-zinc-100 font-medium focus:border-zinc-500 focus:outline-none cursor-pointer">
+                            <option value="All India" selected>All India</option>
+                            <option value="Pune">Pune (MH)</option>
+                            <option value="Bangalore">Bangalore (KA)</option>
+                            <option value="Mumbai">Mumbai (MH)</option>
+                            <option value="Hyderabad">Hyderabad (TS)</option>
+                            <option value="Delhi NCR">Delhi NCR</option>
+                            <option value="Chennai">Chennai (TN)</option>
+                            <option value="Remote">Remote (India)</option>
+                        </select>
+                    </div>
                 </div>
 
                 <!-- Match Score Presets -->
@@ -870,6 +935,80 @@ HTML_CONTENT = """<!DOCTYPE html>
         </div>
     </div>
 
+    <!-- ========================================== -->
+    <!-- Targeted Crawl Discovery Modal -->
+    <!-- ========================================== -->
+    <div id="crawlModal" style="display: none;" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="card-surface border border-zinc-700 max-w-lg w-full rounded-xl shadow-2xl overflow-hidden flex flex-col">
+            <!-- Modal Header -->
+            <div class="px-5 py-3.5 border-b border-zinc-800 flex items-center justify-between bg-zinc-900">
+                <div class="flex items-center space-x-2.5">
+                    <i class="fa-solid fa-radar text-zinc-400 text-xs"></i>
+                    <div>
+                        <h3 class="font-semibold text-zinc-100 text-sm">Targeted Job Discovery</h3>
+                        <p class="text-xs text-zinc-400">Search by Country, State / Tech Hub &amp; Role</p>
+                    </div>
+                </div>
+                <button onclick="closeCrawlModal()" class="btn-ghost" aria-label="Close modal">
+                    <i class="fa-solid fa-xmark text-xs"></i>
+                </button>
+            </div>
+
+            <!-- Modal Content Form -->
+            <div class="p-5 space-y-4 text-xs">
+                <div>
+                    <label class="block text-zinc-300 font-medium mb-1.5">Target Country:</label>
+                    <select id="crawlCountry" onchange="onCrawlCountryChange()" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-100 text-xs focus:border-zinc-600 focus:outline-none cursor-pointer">
+                        <option value="India" selected>India 🇮🇳 (Target Hubs &amp; Local Tech Opportunities)</option>
+                        <option value="United States">United States 🇺🇸</option>
+                        <option value="Europe">Europe / UK 🇪🇺</option>
+                        <option value="Remote">Worldwide Remote 🌐</option>
+                        <option value="All">All Countries / Unrestricted</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-zinc-300 font-medium mb-1.5">Target Tech Hub / State:</label>
+                    <select id="crawlState" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-100 text-xs focus:border-zinc-600 focus:outline-none cursor-pointer">
+                        <option value="All India" selected>All India (Pune, Bangalore, Mumbai, Hyderabad, Delhi NCR, Remote)</option>
+                        <option value="Pune">Pune (Maharashtra)</option>
+                        <option value="Bangalore">Bangalore (Karnataka)</option>
+                        <option value="Mumbai">Mumbai (Maharashtra)</option>
+                        <option value="Hyderabad">Hyderabad (Telangana)</option>
+                        <option value="Delhi NCR">Delhi NCR (Noida / Gurgaon)</option>
+                        <option value="Chennai">Chennai (Tamil Nadu)</option>
+                        <option value="Remote">Remote (India)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-zinc-300 font-medium mb-1.5">Minimum Match Score Threshold:</label>
+                    <div class="flex items-center space-x-3 bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2">
+                        <input type="range" id="crawlScoreRange" min="20" max="80" value="50" step="5" oninput="document.getElementById('crawlScoreVal').innerText = this.value + '%'" class="flex-1 accent-zinc-200 cursor-pointer">
+                        <span id="crawlScoreVal" class="text-xs font-semibold text-zinc-200 font-mono-numbers w-10 text-right">50%</span>
+                    </div>
+                </div>
+
+                <div class="bg-zinc-900 border border-zinc-800 rounded-lg p-3 space-y-1.5">
+                    <label class="flex items-center space-x-2 text-zinc-300 cursor-pointer">
+                        <input type="checkbox" id="crawlSendMail" class="accent-zinc-400 cursor-pointer">
+                        <span class="font-medium text-xs">Email Daily Briefing &amp; Excel report upon completion</span>
+                    </label>
+                    <p class="text-xs text-zinc-500 pl-5">Automatically dispatches the candidate summary and workbook to recipient email.</p>
+                </div>
+            </div>
+
+            <!-- Modal Footer Actions -->
+            <div class="px-5 py-3 border-t border-zinc-800 bg-zinc-900 flex items-center justify-between">
+                <button onclick="closeCrawlModal()" class="btn-secondary">Cancel</button>
+                <button onclick="launchTargetedCrawl()" class="btn-primary">
+                    <i class="fa-solid fa-arrows-rotate text-xs"></i>
+                    <span>Launch Targeted Discovery</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Frontend Interactive JavaScript Application -->
     <script>
         let currentStatus = 'all';
@@ -1006,7 +1145,83 @@ HTML_CONTENT = """<!DOCTYPE html>
             }, 250);
         }
 
-        // Fetch and Render Job Listings with Pagination
+        const LOCATION_HUBS = {
+            "India": [
+                { val: "All India", label: "All India" },
+                { val: "Pune", label: "Pune (MH)" },
+                { val: "Bangalore", label: "Bangalore (KA)" },
+                { val: "Mumbai", label: "Mumbai (MH)" },
+                { val: "Hyderabad", label: "Hyderabad (TS)" },
+                { val: "Delhi NCR", label: "Delhi NCR" },
+                { val: "Chennai", label: "Chennai (TN)" },
+                { val: "Remote", label: "Remote (India)" }
+            ],
+            "United States": [
+                { val: "All US", label: "All US" },
+                { val: "San Francisco", label: "SF / Bay Area" },
+                { val: "New York", label: "New York" },
+                { val: "Austin", label: "Austin (TX)" },
+                { val: "Seattle", label: "Seattle (WA)" },
+                { val: "Remote", label: "Remote (US)" }
+            ],
+            "Europe": [
+                { val: "All Europe", label: "All Europe" },
+                { val: "London", label: "London (UK)" },
+                { val: "Berlin", label: "Berlin (DE)" },
+                { val: "Amsterdam", label: "Amsterdam (NL)" },
+                { val: "Remote", label: "Remote (EU)" }
+            ],
+            "Remote": [
+                { val: "Any Remote", label: "Any Remote" },
+                { val: "Worldwide", label: "Worldwide Global" },
+                { val: "APAC", label: "APAC" },
+                { val: "EMEA", label: "EMEA" },
+                { val: "Americas", label: "Americas" }
+            ],
+            "All": [
+                { val: "Any Location", label: "Any Location" }
+            ]
+        };
+
+        function onCountryChange() {
+            const country = document.getElementById('countryFilter').value;
+            const stateSelect = document.getElementById('stateFilter');
+            const hubs = LOCATION_HUBS[country] || LOCATION_HUBS["All"];
+            stateSelect.innerHTML = hubs.map(h => `<option value="${h.val}">${h.label}</option>`).join('');
+            currentPage = 1;
+            fetchJobs(1);
+        }
+
+        function onStateChange() {
+            currentPage = 1;
+            fetchJobs(1);
+        }
+
+        function openCrawlModal() {
+            document.getElementById('crawlModal').style.display = 'flex';
+        }
+
+        function closeCrawlModal() {
+            document.getElementById('crawlModal').style.display = 'none';
+        }
+
+        function onCrawlCountryChange() {
+            const country = document.getElementById('crawlCountry').value;
+            const stateSelect = document.getElementById('crawlState');
+            const hubs = LOCATION_HUBS[country] || LOCATION_HUBS["All"];
+            stateSelect.innerHTML = hubs.map(h => `<option value="${h.val}">${h.label}</option>`).join('');
+        }
+
+        async function launchTargetedCrawl() {
+            const country = document.getElementById('crawlCountry').value;
+            const state = document.getElementById('crawlState').value;
+            const minScore = parseInt(document.getElementById('crawlScoreRange').value);
+            const sendMail = document.getElementById('crawlSendMail').checked;
+            closeCrawlModal();
+            await executeCrawl(country, state, minScore, sendMail);
+        }
+
+        // Fetch and Render Job Listings with Pagination & Location Filters
         async function fetchJobs(page = 1) {
             currentPage = page;
             const search = document.getElementById('searchInput').value;
@@ -1015,8 +1230,15 @@ HTML_CONTENT = """<!DOCTYPE html>
             const paginationBar = document.getElementById('paginationBar');
             const topPagination = document.getElementById('topPagination');
 
+            const country = document.getElementById('countryFilter') ? document.getElementById('countryFilter').value : 'India';
+            const state = document.getElementById('stateFilter') ? document.getElementById('stateFilter').value : 'All India';
+
             let url = `/api/jobs?page=${currentPage}&limit=${pageSize}&min_score=${currentScore}&sort_by=${sortBy}`;
             if (currentStatus !== 'all') url += `&status=${currentStatus}`;
+            if (country && country !== 'All') url += `&country=${encodeURIComponent(country)}`;
+            if (state && !state.toLowerCase().startsWith('all') && state !== 'Any Location' && state !== 'Any Remote') {
+                url += `&state=${encodeURIComponent(state)}`;
+            }
             if (search.trim()) url += `&search=${encodeURIComponent(search.trim())}`;
 
             try {
@@ -1128,10 +1350,14 @@ HTML_CONTENT = """<!DOCTYPE html>
                             <!-- Role Title (h3 under h2) -->
                             <div>
                                 <h3 class="font-semibold text-zinc-100 text-sm leading-snug tracking-tight hover:text-white transition">${escapeHtml(job.title)}</h3>
-                                <p class="text-xs text-zinc-400">
+                                <p class="text-xs text-zinc-400 flex items-center gap-1.5 flex-wrap">
                                     <span class="text-zinc-300 font-medium">${escapeHtml(job.company)}</span>
                                     <span class="text-zinc-600">•</span>
-                                    <span>${escapeHtml(job.location || 'Remote')}</span>
+                                    <span class="inline-flex items-center gap-1 text-zinc-300">
+                                        <i class="fa-solid fa-location-dot text-zinc-400 text-[10px]"></i>
+                                        ${escapeHtml(job.location || 'Remote')}
+                                    </span>
+                                    ${job.country && job.country !== 'Other' ? `<span class="bg-zinc-800 text-zinc-400 border border-zinc-700/80 px-1.5 py-0.2 rounded text-[10px] font-mono">${escapeHtml(job.country)}</span>` : ''}
                                 </p>
                             </div>
 
@@ -1347,7 +1573,11 @@ HTML_CONTENT = """<!DOCTYPE html>
         }
 
         // Crawler Trigger & Background Progress Checking
-        async function triggerCrawl() {
+        function triggerCrawl() {
+            openCrawlModal();
+        }
+
+        async function executeCrawl(country = "India", state = null, minScore = 50, sendMail = false) {
             const btn = document.getElementById('triggerBtn');
             const icon = document.getElementById('triggerIcon');
             const banner = document.getElementById('crawlBanner');
@@ -1356,9 +1586,13 @@ HTML_CONTENT = """<!DOCTYPE html>
             banner.style.display = 'block';
 
             try {
-                const res = await fetch('/api/trigger', { method: 'POST' });
+                const res = await fetch('/api/trigger', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ country, state, min_score: minScore, send_mail: sendMail })
+                });
                 const data = await res.json();
-                showToast(data.message || 'Crawl initiated across ATS portals & Firecrawl!');
+                showToast(data.message || `Crawl initiated for ${country}!`);
                 checkCrawlProgress();
             } catch(e) {
                 showToast('Failed to start crawler: ' + e, false);

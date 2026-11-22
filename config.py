@@ -39,6 +39,79 @@ TARGET_ROLES = [
     "Software Engineer"
 ]
 
+DEFAULT_TARGET_COUNTRY = "India"
+DEFAULT_TARGET_STATE = "All India"
+
+SUPPORTED_LOCATIONS = {
+    "India": {
+        "code": "IN",
+        "name": "India 🇮🇳",
+        "states": [
+            "All India",
+            "Pune (Maharashtra)",
+            "Bangalore (Karnataka)",
+            "Mumbai (Maharashtra)",
+            "Hyderabad (Telangana)",
+            "Delhi NCR (Noida / Gurgaon)",
+            "Chennai (Tamil Nadu)",
+            "Remote (India)"
+        ],
+        "keywords": ["india", "pune", "bangalore", "bengaluru", "mumbai", "hyderabad", "noida", "gurgaon", "gurugram", "delhi", "chennai"]
+    },
+    "United States": {
+        "code": "US",
+        "name": "United States 🇺🇸",
+        "states": [
+            "All US",
+            "San Francisco / Bay Area",
+            "New York",
+            "Austin (Texas)",
+            "Seattle (Washington)",
+            "Remote (US)"
+        ],
+        "keywords": ["united states", "usa", "us-remote", "remote in us", "san francisco", "chicago", "seattle", "austin", "new york", "california", "texas"]
+    },
+    "Europe": {
+        "code": "EU",
+        "name": "Europe / UK 🇪🇺",
+        "states": [
+            "All Europe",
+            "London (UK)",
+            "Berlin (Germany)",
+            "Amsterdam (Netherlands)",
+            "Spain / Barcelona",
+            "Poland",
+            "Remote (Europe)"
+        ],
+        "keywords": ["europe", "uk", "united kingdom", "london", "berlin", "germany", "amsterdam", "netherlands", "spain", "barcelona", "poland", "costa rica"]
+    },
+    "Remote": {
+        "code": "REMOTE",
+        "name": "Worldwide Remote 🌐",
+        "states": [
+            "Any Remote",
+            "Global / Worldwide",
+            "APAC",
+            "EMEA",
+            "Americas"
+        ],
+        "keywords": ["worldwide", "anywhere", "global", "telecommute", "work from home"]
+    }
+}
+
+def detect_country(location_str: str) -> str:
+    """Classifies a raw location string into a normalized country category."""
+    loc = (location_str or "").lower()
+    if any(k in loc for k in ["india", "pune", "bangalore", "bengaluru", "mumbai", "hyderabad", "noida", "gurgaon", "gurugram", "delhi", "chennai"]):
+        return "India"
+    if any(k in loc for k in ["united states", "usa", "us-remote", "remote in us", "san francisco", "chicago", "seattle", "austin", "new york", "canada", "toronto"]):
+        return "United States"
+    if any(k in loc for k in ["uk", "united kingdom", "london", "germany", "berlin", "spain", "barcelona", "poland", "amsterdam", "netherlands", "europe", "costa rica"]):
+        return "Europe"
+    if any(k in loc for k in ["worldwide", "anywhere", "remote", "global"]):
+        return "Remote"
+    return "Other"
+
 TARGET_LOCATIONS = [
     "Pune",
     "Bangalore",

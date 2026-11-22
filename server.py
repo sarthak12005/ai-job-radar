@@ -323,7 +323,7 @@ def export_excel():
     raise HTTPException(status_code=500, detail="Failed to generate Excel file")
 
 # ==========================================
-# Frontend Dashboard (HTML / Tailwind / JS) - Elevated with UI/UX Pro Max
+# Frontend Dashboard (HTML / Tailwind / JS) - Professional Developer Tool
 # ==========================================
 
 @app.get("/", response_class=HTMLResponse, tags=["Database & System"], summary="Web Dashboard UI")
@@ -339,8 +339,8 @@ HTML_CONTENT = """<!DOCTYPE html>
     <!-- Google Fonts: Inter & JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- FontAwesome 6 -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- FontAwesome 6 Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -350,39 +350,19 @@ HTML_CONTENT = """<!DOCTYPE html>
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
                         mono: ['JetBrains Mono', 'Fira Code', 'monospace']
-                    },
-                    colors: {
-                        brand: {
-                            50: '#f0f9ff',
-                            100: '#e0f2fe',
-                            200: '#bae6fd',
-                            500: '#0284c7',
-                            600: '#0369a1',
-                            700: '#075985',
-                            800: '#0c4a6e',
-                            900: '#082f49'
-                        },
-                        surface: {
-                            DEFAULT: '#0B1120',
-                            card: '#0F172A',
-                            hover: '#1E293B',
-                            border: '#1E293B'
-                        }
                     }
                 }
             }
         }
     </script>
     <style>
-        :root {
-            color-scheme: dark;
-        }
+        :root { color-scheme: dark; }
         body {
-            font-family: 'Inter', system-ui, sans-serif;
-            background-color: #070B14;
-            color: #F8FAFC;
+            font-family: 'Inter', sans-serif;
+            background-color: #09090B;
+            color: #FAFAFA;
         }
         .font-mono-numbers {
             font-family: 'JetBrains Mono', monospace;
@@ -390,253 +370,304 @@ HTML_CONTENT = """<!DOCTYPE html>
         }
         /* Custom scrollbar */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #070B14; }
-        ::-webkit-scrollbar-thumb { background: #1E293B; border-radius: 9999px; }
-        ::-webkit-scrollbar-thumb:hover { background: #334155; }
-        /* Glassmorphism */
-        .glass-panel {
-            background: rgba(15, 23, 42, 0.75);
-            backdrop-filter: blur(14px);
-            -webkit-backdrop-filter: blur(14px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+        ::-webkit-scrollbar-track { background: #09090B; }
+        ::-webkit-scrollbar-thumb { background: #27272A; border-radius: 9999px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3F3F46; }
+
+        /* Unified Button System (5 distinct styles max) */
+        .btn-primary {
+            background-color: #FAFAFA;
+            color: #09090B;
+            font-weight: 500;
+            font-size: 0.75rem;
+            padding: 0.375rem 0.875rem;
+            border-radius: 0.5rem;
+            transition: all 150ms ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.375rem;
+            cursor: pointer;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
         }
-        .glass-card {
-            background: rgba(15, 23, 42, 0.85);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        .btn-primary:hover { background-color: #E4E4E7; }
+        .btn-primary:active { transform: scale(0.97); }
+
+        .btn-secondary {
+            background-color: #18181B;
+            color: #E4E4E7;
+            border: 1px solid #27272A;
+            font-weight: 500;
+            font-size: 0.75rem;
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.5rem;
+            transition: all 150ms ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.375rem;
+            cursor: pointer;
         }
-        .glass-card:hover {
-            border-color: rgba(56, 189, 248, 0.35);
-            box-shadow: 0 10px 25px -5px rgba(2, 132, 199, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
-            transform: translateY(-1.5px);
+        .btn-secondary:hover { background-color: #27272A; color: #FFFFFF; }
+        .btn-secondary:active { transform: scale(0.97); }
+
+        .btn-outline {
+            background-color: transparent;
+            color: #A1A1AA;
+            border: 1px solid #27272A;
+            font-weight: 500;
+            font-size: 0.75rem;
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.5rem;
+            transition: all 150ms ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.375rem;
+            cursor: pointer;
         }
-        /* Accessible focus rings */
+        .btn-outline:hover { background-color: #18181B; color: #FAFAFA; border-color: #3F3F46; }
+        .btn-outline:active { transform: scale(0.97); }
+
+        .btn-ghost {
+            background-color: transparent;
+            color: #A1A1AA;
+            padding: 0.375rem 0.5rem;
+            border-radius: 0.5rem;
+            transition: all 150ms ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .btn-ghost:hover { background-color: #18181B; color: #FAFAFA; }
+
+        .btn-destructive {
+            background-color: transparent;
+            color: #71717A;
+            padding: 0.375rem 0.5rem;
+            border-radius: 0.5rem;
+            transition: all 150ms ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .btn-destructive:hover { background-color: rgba(239, 68, 68, 0.1); color: #F87171; }
+
+        /* Crisp card containers */
+        .card-surface {
+            background-color: #121215;
+            border: 1px solid #27272A;
+        }
+        .card-interactive {
+            background-color: #121215;
+            border: 1px solid #27272A;
+            transition: border-color 150ms ease, background-color 150ms ease;
+        }
+        .card-interactive:hover {
+            border-color: #3F3F46;
+            background-color: #18181B;
+        }
+
         button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
-            outline: 2px solid #0284C7;
+            outline: 2px solid #52525B;
             outline-offset: 2px;
-        }
-        /* Animated gradient text */
-        .gradient-text {
-            background: linear-gradient(135deg, #38BDF8 0%, #818CF8 50%, #C084FC 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        /* Pulse glow */
-        .pulse-glow {
-            box-shadow: 0 0 15px rgba(2, 132, 199, 0.35);
-        }
-        @media (prefers-reduced-motion: reduce) {
-            * {
-                animation-duration: 0.01ms !important;
-                transition-duration: 0.01ms !important;
-            }
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col antialiased selection:bg-sky-500/30 selection:text-sky-200">
+<body class="min-h-screen flex flex-col antialiased selection:bg-zinc-800 selection:text-zinc-100">
 
     <!-- Top Sticky Header Navigation -->
-    <header class="sticky top-0 z-40 border-b border-slate-800/80 bg-[#070B14]/85 backdrop-blur-md">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+    <header class="sticky top-0 z-40 border-b border-zinc-800 bg-[#09090B]/90 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-4">
             <!-- Brand & Candidate Identity -->
             <div class="flex items-center space-x-3 min-w-0">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 via-indigo-600 to-purple-600 flex items-center justify-center font-bold text-white text-lg shadow-lg shadow-sky-500/20 shrink-0">
-                    <i class="fa-solid fa-radar text-white text-base"></i>
+                <div class="w-8 h-8 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center font-bold text-zinc-100 text-sm shrink-0">
+                    <i class="fa-solid fa-radar text-zinc-200 text-xs"></i>
                 </div>
                 <div class="truncate">
                     <div class="flex items-center space-x-2">
-                        <span class="font-extrabold text-base sm:text-lg tracking-tight text-white">Job Radar</span>
-                        <span class="text-[11px] font-semibold bg-sky-500/15 text-sky-300 border border-sky-500/30 px-2 py-0.5 rounded-full">Sarthak Joshi</span>
+                        <span class="font-bold text-sm sm:text-base tracking-tight text-zinc-100">Job Radar</span>
+                        <span class="text-xs font-medium bg-zinc-800 text-zinc-300 border border-zinc-700 px-2 py-0.5 rounded-full">Sarthak Joshi</span>
                     </div>
-                    <p class="text-[11px] text-slate-400 font-medium truncate hidden sm:block">1.8+ Yrs Exp • Full Stack / Backend: Node.js, NestJS, TypeScript, PostgreSQL, Redis, BullMQ</p>
+                    <!-- Issue 3 Fixed: Body copy raised from 11px to 12px (text-xs) -->
+                    <p class="text-xs text-zinc-400 font-normal truncate hidden sm:block">1.8+ Yrs Exp • Full Stack / Backend: Node.js, NestJS, TypeScript, PostgreSQL, Redis, BullMQ</p>
                 </div>
             </div>
 
-            <!-- Header Action Controls -->
+            <!-- Header Action Controls (Issue 1 Fixed: Unified 5-style button system) -->
             <div class="flex items-center space-x-2 shrink-0">
                 <!-- Swagger OpenAPI Docs -->
-                <a href="/docs" target="_blank" rel="noopener noreferrer" class="cursor-pointer inline-flex items-center space-x-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-3 py-1.5 rounded-lg text-xs font-semibold transition active:scale-95" title="Interactive Swagger UI & OpenAPI Documentation">
-                    <i class="fa-solid fa-book-bookmark text-indigo-400 text-xs"></i>
-                    <span class="hidden md:inline">Swagger API</span>
+                <a href="/docs" target="_blank" rel="noopener noreferrer" class="btn-outline" title="Interactive Swagger UI & OpenAPI Documentation">
+                    <i class="fa-solid fa-book text-xs text-zinc-400"></i>
+                    <span class="hidden md:inline">API Docs</span>
                 </a>
 
                 <!-- Live Logs Button -->
-                <button onclick="openLogsModal()" class="cursor-pointer inline-flex items-center space-x-1.5 bg-slate-800/90 hover:bg-slate-700/90 text-slate-200 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-semibold transition active:scale-95" title="Inspect live rotating application logs">
-                    <i class="fa-solid fa-terminal text-sky-400 text-xs"></i>
-                    <span class="hidden sm:inline">Live Logs</span>
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse hidden sm:inline-block"></span>
+                <button onclick="openLogsModal()" class="btn-secondary" title="Inspect live rotating application logs">
+                    <i class="fa-solid fa-terminal text-xs text-zinc-400"></i>
+                    <span class="hidden sm:inline">Logs</span>
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
                 </button>
 
+                <!-- Export Excel -->
+                <a href="/api/export-excel" class="btn-secondary" title="Download formatted Excel (.xlsx) report with hyperlinks">
+                    <i class="fa-solid fa-file-excel text-xs text-emerald-400"></i>
+                    <span class="hidden lg:inline">Excel</span>
+                </a>
+
                 <!-- 1-Click Job Crawler Button -->
-                <button onclick="triggerCrawl()" id="triggerBtn" class="cursor-pointer inline-flex items-center space-x-2 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold shadow-md shadow-sky-500/20 transition active:scale-95">
+                <button onclick="triggerCrawl()" id="triggerBtn" class="btn-primary" title="Trigger background crawler across ATS portals and Firecrawl">
                     <i class="fa-solid fa-arrows-rotate text-xs" id="triggerIcon"></i>
                     <span>Crawl Jobs</span>
                 </button>
 
-                <!-- Export Excel -->
-                <a href="/api/export-excel" class="cursor-pointer inline-flex items-center space-x-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 px-3 py-1.5 rounded-lg text-xs font-semibold transition active:scale-95" title="Download formatted Excel (.xlsx) report with hyperlinks">
-                    <i class="fa-solid fa-file-excel text-emerald-400 text-xs"></i>
-                    <span class="hidden lg:inline">Excel</span>
-                </a>
-
                 <!-- Database Reset / Clean Button -->
-                <button onclick="confirmResetDB()" class="cursor-pointer text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/30 p-2 rounded-lg text-xs transition active:scale-95" title="Reset/Empty Database & Reports for a clean run" aria-label="Reset Database">
-                    <i class="fa-solid fa-trash-can text-sm"></i>
+                <button onclick="confirmResetDB()" class="btn-destructive" title="Reset/Empty Database & Reports for a clean run" aria-label="Reset Database">
+                    <i class="fa-solid fa-trash-can text-xs"></i>
                 </button>
             </div>
         </div>
 
         <!-- Crawl Progress Alert Strip (Dynamic) -->
-        <div id="crawlBanner" class="hidden border-t border-sky-500/30 bg-gradient-to-r from-sky-950/80 via-indigo-950/80 to-sky-950/80 px-4 py-2">
-            <div class="max-w-7xl mx-auto flex items-center justify-between text-xs text-sky-200">
+        <div id="crawlBanner" style="display: none;" class="border-t border-zinc-800 bg-zinc-900 px-4 py-2">
+            <div class="max-w-7xl mx-auto flex items-center justify-between text-xs text-zinc-300">
                 <div class="flex items-center space-x-2.5">
-                    <i class="fa-solid fa-circle-notch fa-spin text-sky-400 text-sm"></i>
-                    <span class="font-medium">Active multi-source crawl in progress: Scanning Greenhouse ATS boards, Firecrawl live search &amp; remote portals...</span>
+                    <i class="fa-solid fa-circle-notch fa-spin text-zinc-400 text-xs"></i>
+                    <span>Active crawl in progress: Scanning Greenhouse ATS boards, Firecrawl live search &amp; remote portals...</span>
                 </div>
-                <span class="text-sky-300/80 text-[11px] font-mono-numbers">Background Task Active</span>
+                <span class="text-zinc-500 font-mono-numbers text-xs">Background Task</span>
             </div>
         </div>
     </header>
 
     <!-- Main Content Area -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-7 space-y-6 flex-1 w-full">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-5 flex-1 w-full">
 
-        <!-- Notification Toast (UX Compliant) -->
-        <div id="toast" role="status" aria-live="polite" class="hidden fixed bottom-6 right-6 z-50 glass-panel border border-slate-700 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 transition-all duration-300 max-w-md">
-            <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400 text-lg shrink-0"></i>
-            <span id="toastMsg" class="text-xs sm:text-sm font-medium leading-snug">Notification</span>
-            <button onclick="hideToast()" class="cursor-pointer text-slate-400 hover:text-white ml-2 text-xs" aria-label="Close notification">
-                <i class="fa-solid fa-xmark"></i>
+        <!-- Notification Toast -->
+        <div id="toast" role="status" aria-live="polite" style="display: none;" class="fixed bottom-5 right-5 z-50 card-surface border border-zinc-700 text-zinc-100 px-4 py-3 rounded-lg shadow-xl flex items-center space-x-3 transition-all max-w-md">
+            <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400 text-sm shrink-0"></i>
+            <span id="toastMsg" class="text-xs font-medium">Notification</span>
+            <button onclick="hideToast()" class="btn-ghost ml-2" aria-label="Close notification">
+                <i class="fa-solid fa-xmark text-xs"></i>
             </button>
         </div>
 
-        <!-- Profile & Target Header Banner -->
-        <div class="glass-panel rounded-2xl p-5 border border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <div class="flex items-center space-x-4">
-                <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xl shadow-md shadow-sky-500/20 shrink-0">
+        <!-- Candidate Profile Header Bar -->
+        <div class="card-surface rounded-xl p-4 border border-zinc-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center text-zinc-100 font-semibold text-sm shrink-0">
                     SJ
                 </div>
                 <div>
                     <div class="flex items-center space-x-2">
-                        <h1 class="text-lg font-bold text-white tracking-tight">Sarthak Joshi — Candidate Intelligence Profile</h1>
-                        <span class="bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-[11px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">
-                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Ready to Apply
+                        <h1 class="text-sm font-semibold text-zinc-100 tracking-tight">Sarthak Joshi — Candidate Profile</h1>
+                        <span class="bg-zinc-800 text-zinc-300 border border-zinc-700 text-xs font-medium px-2 py-0.5 rounded-full flex items-center gap-1.5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Active
                         </span>
                     </div>
-                    <p class="text-xs text-slate-400 mt-0.5">
-                        <span class="text-slate-300 font-medium">Core Stack:</span> NestJS, Node.js, TypeScript, PostgreSQL, Redis, BullMQ, Docker, Microservices • 
-                        <span class="text-slate-300 font-medium">Exp:</span> 1.8+ Years (Target: 1-3 Yrs Roles)
+                    <p class="text-xs text-zinc-400 mt-0.5">
+                        <span class="text-zinc-300 font-medium">Stack:</span> NestJS, Node.js, TypeScript, PostgreSQL, Redis, BullMQ, Docker • 
+                        <span class="text-zinc-300 font-medium">Experience:</span> 1.8+ Years (Target: Mid/Junior 1–3 Yrs)
                     </p>
                 </div>
             </div>
 
-            <!-- Resume & Automation Badges -->
-            <div class="flex flex-wrap items-center gap-2 self-stretch md:self-auto justify-end text-xs">
-                <span class="bg-slate-900 border border-slate-700/80 px-2.5 py-1 rounded-lg text-slate-300 flex items-center gap-1.5">
-                    <i class="fa-solid fa-file-pdf text-rose-400"></i>
-                    <span class="font-medium">Resume: Nov 2026 PDF</span>
+            <!-- Resume & Schedule Metadata -->
+            <div class="flex flex-wrap items-center gap-2 text-xs">
+                <span class="bg-zinc-900 border border-zinc-800 px-2.5 py-1 rounded-md text-zinc-300 flex items-center gap-1.5">
+                    <i class="fa-solid fa-file-pdf text-zinc-400 text-xs"></i>
+                    <span>Nov 2026 PDF</span>
                 </span>
-                <span class="bg-slate-900 border border-slate-700/80 px-2.5 py-1 rounded-lg text-slate-300 flex items-center gap-1.5">
-                    <i class="fa-solid fa-clock text-sky-400"></i>
-                    <span class="font-medium">Scheduled: Daily 8:30 AM IST</span>
+                <span class="bg-zinc-900 border border-zinc-800 px-2.5 py-1 rounded-md text-zinc-300 flex items-center gap-1.5">
+                    <i class="fa-regular fa-clock text-zinc-400 text-xs"></i>
+                    <span>Daily 08:30 AM IST</span>
                 </span>
-                <span class="bg-slate-900 border border-slate-700/80 px-2.5 py-1 rounded-lg text-slate-300 flex items-center gap-1.5">
-                    <i class="fa-solid fa-database text-emerald-400"></i>
-                    <span class="font-medium">MongoDB: job_crawler_db</span>
+                <span class="bg-zinc-900 border border-zinc-800 px-2.5 py-1 rounded-md text-zinc-300 flex items-center gap-1.5">
+                    <i class="fa-solid fa-database text-zinc-400 text-xs"></i>
+                    <span>job_crawler_db</span>
                 </span>
             </div>
         </div>
 
-        <!-- KPI Metrics Grid (Data-Dense Dashboard) -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <!-- Total Discovered -->
-            <div class="glass-card rounded-2xl p-4 sm:p-5 border border-slate-800">
-                <div class="flex items-center justify-between text-slate-400 mb-2">
-                    <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Tracked</span>
-                    <span class="w-7 h-7 rounded-lg bg-sky-500/10 text-sky-400 flex items-center justify-center text-xs">
-                        <i class="fa-solid fa-briefcase"></i>
-                    </span>
+        <!-- KPI Metrics Grid (Data-Dense Dashboard - Issue 4 & 5 Fixed) -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <!-- Total Tracked -->
+            <div class="card-surface rounded-xl p-4 border border-zinc-800">
+                <div class="flex items-center justify-between text-zinc-400 mb-1.5">
+                    <span class="text-xs font-medium text-zinc-400">Total Tracked</span>
+                    <i class="fa-solid fa-briefcase text-zinc-500 text-xs"></i>
                 </div>
-                <div id="statTotal" class="text-2xl sm:text-3xl font-extrabold text-white font-mono-numbers">0</div>
-                <div class="text-[11px] text-slate-400 mt-1 flex items-center justify-between">
-                    <span>MongoDB Collection</span>
-                    <span id="statDistinctCompanies" class="font-medium text-slate-300">0 Companies</span>
-                </div>
+                <div id="statTotal" class="text-2xl font-bold text-zinc-100 font-mono-numbers">0</div>
+                <!-- Issue 4 Fixed: Body copy raised from 11px to 12px (text-xs) -->
+                <p class="text-xs text-zinc-400 mt-1 flex items-center justify-between">
+                    <span>MongoDB Database</span>
+                    <span id="statDistinctCompanies" class="text-zinc-300 font-medium">0 Companies</span>
+                </p>
             </div>
 
             <!-- High Matches (≥70%) -->
-            <div class="glass-card rounded-2xl p-4 sm:p-5 border border-slate-800">
-                <div class="flex items-center justify-between text-slate-400 mb-2">
-                    <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-400">High Matches</span>
-                    <span class="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-xs">
-                        <i class="fa-solid fa-bullseye"></i>
-                    </span>
+            <div class="card-surface rounded-xl p-4 border border-zinc-800">
+                <div class="flex items-center justify-between text-zinc-400 mb-1.5">
+                    <span class="text-xs font-medium text-emerald-400">High Matches</span>
+                    <i class="fa-solid fa-bullseye text-emerald-400 text-xs"></i>
                 </div>
-                <div id="statHigh" class="text-2xl sm:text-3xl font-extrabold text-emerald-400 font-mono-numbers">0</div>
-                <div class="text-[11px] text-slate-400 mt-1">
-                    <span>≥ 70% Match Score Calibration</span>
-                </div>
+                <div id="statHigh" class="text-2xl font-bold text-emerald-400 font-mono-numbers">0</div>
+                <!-- Issue 4 Fixed: Body copy raised from 11px to 12px (text-xs) -->
+                <p class="text-xs text-zinc-400 mt-1">≥ 70% Score Calibration</p>
             </div>
 
             <!-- Cold Outreach Sent -->
-            <div class="glass-card rounded-2xl p-4 sm:p-5 border border-slate-800">
-                <div class="flex items-center justify-between text-slate-400 mb-2">
-                    <span class="text-[11px] font-bold uppercase tracking-wider text-amber-400">Outreach Sent</span>
-                    <span class="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center text-xs">
-                        <i class="fa-solid fa-paper-plane"></i>
-                    </span>
+            <div class="card-surface rounded-xl p-4 border border-zinc-800">
+                <div class="flex items-center justify-between text-zinc-400 mb-1.5">
+                    <span class="text-xs font-medium text-zinc-300">Outreach Sent</span>
+                    <i class="fa-solid fa-paper-plane text-zinc-400 text-xs"></i>
                 </div>
-                <div id="statContacted" class="text-2xl sm:text-3xl font-extrabold text-amber-400 font-mono-numbers">0</div>
-                <div class="text-[11px] text-slate-400 mt-1">
-                    <span>Direct Recruiter Cold Emails</span>
-                </div>
+                <div id="statContacted" class="text-2xl font-bold text-zinc-100 font-mono-numbers">0</div>
+                <!-- Issue 4 Fixed: Body copy raised from 11px to 12px (text-xs) -->
+                <p class="text-xs text-zinc-400 mt-1">Direct Recruiter Emails</p>
             </div>
 
-            <!-- Pipeline / Interviewing -->
-            <div class="glass-card rounded-2xl p-4 sm:p-5 border border-slate-800">
-                <div class="flex items-center justify-between text-slate-400 mb-2">
-                    <span class="text-[11px] font-bold uppercase tracking-wider text-purple-400">Pipeline / Interviews</span>
-                    <span class="w-7 h-7 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center text-xs">
-                        <i class="fa-solid fa-handshake"></i>
-                    </span>
+            <!-- Pipeline / Interviews (Issue 5 Fixed: Removed all-caps, used sentence/title case) -->
+            <div class="card-surface rounded-xl p-4 border border-zinc-800">
+                <div class="flex items-center justify-between text-zinc-400 mb-1.5">
+                    <span class="text-xs font-medium text-zinc-300">Pipeline &amp; Interviews</span>
+                    <i class="fa-solid fa-handshake text-zinc-400 text-xs"></i>
                 </div>
-                <div id="statInterviewing" class="text-2xl sm:text-3xl font-extrabold text-purple-400 font-mono-numbers">0</div>
-                <div class="text-[11px] text-slate-400 mt-1">
-                    <span>Active Candidate Conversations</span>
-                </div>
+                <div id="statInterviewing" class="text-2xl font-bold text-zinc-100 font-mono-numbers">0</div>
+                <!-- Issue 4 Fixed: Body copy raised from 11px to 12px (text-xs) -->
+                <p class="text-xs text-zinc-400 mt-1">Active Conversations</p>
             </div>
         </div>
 
-        <!-- Filter & Search Command Center -->
-        <div class="glass-panel rounded-2xl p-4 sm:p-5 border border-slate-800 space-y-4">
-            <!-- Search & Primary Filter Row -->
+        <!-- Search & Filter Controls -->
+        <div class="card-surface rounded-xl p-4 border border-zinc-800 space-y-3">
             <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-                <!-- Search Box with Clear Button -->
+                <!-- Search Box -->
                 <div class="relative flex-1">
-                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400 text-xs"></i>
-                    <input type="text" id="searchInput" oninput="debounceFetch()" placeholder="Search by role, company, or stack (e.g. NestJS, Stripe, Bangalore, Redis)..." class="w-full bg-[#070B14] border border-slate-700/80 rounded-xl pl-9 pr-8 py-2.5 text-xs sm:text-sm text-slate-100 placeholder-slate-500 transition focus:border-sky-500">
-                    <button id="clearSearchBtn" onclick="clearSearch()" class="hidden cursor-pointer absolute right-3 top-3 text-slate-400 hover:text-white text-xs" aria-label="Clear search">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-zinc-500 text-xs"></i>
+                    <input type="text" id="searchInput" oninput="debounceFetch()" placeholder="Filter by role, company, or tech stack (e.g. NestJS, Stripe, Redis)..." class="w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-8 pr-8 py-2 text-xs text-zinc-100 placeholder-zinc-500 focus:border-zinc-600 focus:outline-none">
+                    <button id="clearSearchBtn" onclick="clearSearch()" style="display: none;" class="btn-ghost absolute right-2 top-2 text-xs" aria-label="Clear search">
                         <i class="fa-solid fa-circle-xmark"></i>
                     </button>
                 </div>
 
-                <!-- Match Score Presets & Slider -->
-                <div class="flex flex-wrap items-center gap-2.5 bg-[#070B14] p-2 rounded-xl border border-slate-700/80">
-                    <span class="text-xs text-slate-400 font-medium ml-1">Score:</span>
-                    <!-- Preset pills -->
-                    <button onclick="setScorePreset(0)" class="score-pill px-2 py-1 rounded text-[11px] font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition" data-score="0">All</button>
-                    <button onclick="setScorePreset(50)" class="score-pill px-2 py-1 rounded text-[11px] font-semibold bg-sky-500 text-white transition" data-score="50">50%+</button>
-                    <button onclick="setScorePreset(70)" class="score-pill px-2 py-1 rounded text-[11px] font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition" data-score="70">70%+ High</button>
-                    <button onclick="setScorePreset(80)" class="score-pill px-2 py-1 rounded text-[11px] font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition" data-score="80">80%+ Prime</button>
-                    <input type="range" id="scoreRange" min="0" max="100" value="50" step="5" oninput="updateScoreFilter(this.value)" class="w-20 accent-sky-500 cursor-pointer ml-1" title="Adjust minimum match score">
-                    <span id="scoreLabel" class="text-xs font-bold text-sky-400 font-mono-numbers w-10 text-right">50%</span>
+                <!-- Match Score Presets -->
+                <div class="flex flex-wrap items-center gap-2 bg-zinc-950 p-1.5 rounded-lg border border-zinc-800">
+                    <span class="text-xs text-zinc-400 font-medium ml-1">Score:</span>
+                    <button onclick="setScorePreset(0)" class="score-btn btn-secondary text-xs" data-score="0">All</button>
+                    <button onclick="setScorePreset(50)" class="score-btn btn-primary text-xs" data-score="50">50%+</button>
+                    <button onclick="setScorePreset(70)" class="score-btn btn-secondary text-xs" data-score="70">70%+ High</button>
+                    <button onclick="setScorePreset(80)" class="score-btn btn-secondary text-xs" data-score="80">80%+ Prime</button>
+                    <input type="range" id="scoreRange" min="0" max="100" value="50" step="5" oninput="updateScoreFilter(this.value)" class="w-20 accent-zinc-200 cursor-pointer ml-1" title="Adjust minimum match score">
+                    <span id="scoreLabel" class="text-xs font-semibold text-zinc-200 font-mono-numbers w-10 text-right">50%</span>
                 </div>
 
                 <!-- Sort Order Selector -->
                 <div class="flex items-center space-x-2 shrink-0">
-                    <select id="sortBy" onchange="fetchJobs()" class="bg-[#070B14] border border-slate-700/80 rounded-xl px-3 py-2.5 text-xs font-medium text-slate-200 cursor-pointer transition focus:border-sky-500">
-                        <option value="match_score">Sort: Match Score (Highest)</option>
+                    <select id="sortBy" onchange="fetchJobs(1)" class="bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-2 text-xs font-medium text-zinc-200 cursor-pointer focus:border-zinc-600 focus:outline-none">
+                        <option value="match_score">Sort: Match Score</option>
                         <option value="date">Sort: Date Scraped</option>
                         <option value="company">Sort: Company Name</option>
                     </select>
@@ -644,75 +675,89 @@ HTML_CONTENT = """<!DOCTYPE html>
             </div>
 
             <!-- Application Status Tabs with Live Count Badges -->
-            <div class="flex items-center space-x-2 overflow-x-auto pb-1 text-xs border-t border-slate-800/80 pt-3" id="statusTabs">
-                <button onclick="setStatusFilter('all')" class="status-tab cursor-pointer px-3 py-1.5 rounded-lg font-semibold transition bg-sky-500 text-white shrink-0 flex items-center gap-1.5" data-status="all">
-                    <span>All Jobs</span>
-                    <span id="tabCountAll" class="bg-white/20 text-white text-[10px] px-1.5 py-0.2 rounded-full font-mono-numbers">0</span>
+            <div class="flex items-center space-x-2 overflow-x-auto pb-1 text-xs border-t border-zinc-800/80 pt-3" id="statusTabs">
+                <button onclick="setStatusFilter('all')" class="status-tab btn-primary shrink-0" data-status="all">
+                    <span>All Opportunities</span>
+                    <span id="tabCountAll" class="bg-zinc-800 text-zinc-200 text-xs px-1.5 py-0.2 rounded-full font-mono-numbers">0</span>
                 </button>
-                <button onclick="setStatusFilter('new')" class="status-tab cursor-pointer px-3 py-1.5 rounded-lg font-semibold transition bg-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-700 shrink-0 flex items-center gap-1.5" data-status="new">
-                    <span>New / Unreviewed</span>
-                    <span id="tabCountNew" class="bg-slate-700 text-slate-300 text-[10px] px-1.5 py-0.2 rounded-full font-mono-numbers">0</span>
+                <button onclick="setStatusFilter('new')" class="status-tab btn-secondary shrink-0" data-status="new">
+                    <span>New</span>
+                    <span id="tabCountNew" class="bg-zinc-800 text-zinc-400 text-xs px-1.5 py-0.2 rounded-full font-mono-numbers">0</span>
                 </button>
-                <button onclick="setStatusFilter('applied')" class="status-tab cursor-pointer px-3 py-1.5 rounded-lg font-semibold transition bg-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-700 shrink-0 flex items-center gap-1.5" data-status="applied">
+                <button onclick="setStatusFilter('applied')" class="status-tab btn-secondary shrink-0" data-status="applied">
                     <span>Applied</span>
-                    <span id="tabCountApplied" class="bg-slate-700 text-slate-300 text-[10px] px-1.5 py-0.2 rounded-full font-mono-numbers">0</span>
+                    <span id="tabCountApplied" class="bg-zinc-800 text-zinc-400 text-xs px-1.5 py-0.2 rounded-full font-mono-numbers">0</span>
                 </button>
-                <button onclick="setStatusFilter('contacted')" class="status-tab cursor-pointer px-3 py-1.5 rounded-lg font-semibold transition bg-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-700 shrink-0 flex items-center gap-1.5" data-status="contacted">
-                    <span>Cold Outreach Sent</span>
-                    <span id="tabCountContacted" class="bg-slate-700 text-slate-300 text-[10px] px-1.5 py-0.2 rounded-full font-mono-numbers">0</span>
+                <button onclick="setStatusFilter('contacted')" class="status-tab btn-secondary shrink-0" data-status="contacted">
+                    <span>Cold Outreach</span>
+                    <span id="tabCountContacted" class="bg-zinc-800 text-zinc-400 text-xs px-1.5 py-0.2 rounded-full font-mono-numbers">0</span>
                 </button>
-                <button onclick="setStatusFilter('interviewing')" class="status-tab cursor-pointer px-3 py-1.5 rounded-lg font-semibold transition bg-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-700 shrink-0 flex items-center gap-1.5" data-status="interviewing">
+                <button onclick="setStatusFilter('interviewing')" class="status-tab btn-secondary shrink-0" data-status="interviewing">
                     <span>Interviewing</span>
-                    <span id="tabCountInterviewing" class="bg-slate-700 text-slate-300 text-[10px] px-1.5 py-0.2 rounded-full font-mono-numbers">0</span>
+                    <span id="tabCountInterviewing" class="bg-zinc-800 text-zinc-400 text-xs px-1.5 py-0.2 rounded-full font-mono-numbers">0</span>
                 </button>
-                <button onclick="setStatusFilter('saved')" class="status-tab cursor-pointer px-3 py-1.5 rounded-lg font-semibold transition bg-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-700 shrink-0 flex items-center gap-1.5" data-status="saved">
+                <button onclick="setStatusFilter('saved')" class="status-tab btn-secondary shrink-0" data-status="saved">
                     <span>Saved</span>
-                    <span id="tabCountSaved" class="bg-slate-700 text-slate-300 text-[10px] px-1.5 py-0.2 rounded-full font-mono-numbers">0</span>
+                    <span id="tabCountSaved" class="bg-zinc-800 text-zinc-400 text-xs px-1.5 py-0.2 rounded-full font-mono-numbers">0</span>
                 </button>
             </div>
         </div>
 
         <!-- Matched Job Opportunities Header & Results List -->
-        <div class="space-y-4" id="jobsSection">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-slate-400 px-1 gap-2">
-                <span>Displaying <strong id="jobsCount" class="font-bold text-white font-mono-numbers">0</strong> matching opportunities</span>
+        <!-- Issue 6 Fixed: Proper Heading Hierarchy (H1 -> H2 -> H3) -->
+        <div class="space-y-3" id="jobsSection">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-zinc-400 px-1 gap-2">
+                <div class="flex items-center space-x-2">
+                    <h2 class="text-sm font-semibold text-zinc-100">Discovered Opportunities</h2>
+                    <span class="text-xs text-zinc-500 font-mono-numbers">(<span id="jobsCount">0</span> total)</span>
+                </div>
+
+                <!-- Top Pagination Toolbar (Quick Navigation) -->
                 <div class="flex items-center space-x-3">
-                    <div class="flex items-center space-x-1.5 text-xs text-slate-400">
-                        <span>Per Page:</span>
-                        <select id="pageSizeSelect" onchange="changePageSize(this.value)" class="cursor-pointer bg-[#070B14] border border-slate-700/80 rounded-lg px-2 py-1 text-slate-200 text-xs font-semibold focus:border-sky-500">
-                            <option value="10" selected>10</option>
-                            <option value="20">20</option>
-                            <option value="50">50</option>
+                    <div class="flex items-center space-x-1.5 text-xs text-zinc-400">
+                        <span>Show:</span>
+                        <select id="pageSizeSelect" onchange="changePageSize(this.value)" class="bg-zinc-950 border border-zinc-800 rounded-md px-2 py-1 text-zinc-200 text-xs font-medium focus:border-zinc-600 focus:outline-none cursor-pointer">
+                            <option value="10" selected>10 per page</option>
+                            <option value="20">20 per page</option>
+                            <option value="50">50 per page</option>
                         </select>
                     </div>
-                    <span id="syncStatus" class="flex items-center gap-1.5 text-slate-400">
-                        <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Synced with MongoDB
-                    </span>
+
+                    <!-- Top Mini Pagination Controls -->
+                    <div id="topPagination" style="display: none;" class="flex items-center space-x-1">
+                        <button onclick="prevPage()" id="topPrevBtn" class="btn-secondary !p-1 !px-2 text-xs" title="Previous page">
+                            <i class="fa-solid fa-chevron-left text-xs"></i>
+                        </button>
+                        <span id="topPageIndicator" class="text-xs text-zinc-300 font-mono-numbers px-2">Page 1 / 1</span>
+                        <button onclick="nextPage()" id="topNextBtn" class="btn-secondary !p-1 !px-2 text-xs" title="Next page">
+                            <i class="fa-solid fa-chevron-right text-xs"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
 
             <!-- Job Cards Container -->
-            <div id="jobsList" class="space-y-3.5">
+            <div id="jobsList" class="space-y-2.5">
                 <!-- Dynamically rendered job cards -->
             </div>
 
-            <!-- Pagination Bar (UI/UX Pro Max) -->
-            <div id="paginationBar" class="hidden glass-panel rounded-2xl p-4 border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div class="text-xs text-slate-400">
-                    Showing <span id="pageRangeText" class="font-bold text-white font-mono-numbers">0-0</span> of <span id="pageTotalText" class="font-bold text-white font-mono-numbers">0</span> opportunities
+            <!-- Full Bottom Pagination Bar -->
+            <div id="paginationBar" style="display: none;" class="card-surface rounded-xl p-4 border border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div class="text-xs text-zinc-400">
+                    Showing <span id="pageRangeText" class="font-semibold text-zinc-100 font-mono-numbers">0–0</span> of <span id="pageTotalText" class="font-semibold text-zinc-100 font-mono-numbers">0</span> opportunities
                 </div>
 
-                <div class="flex items-center space-x-1.5">
-                    <button id="prevPageBtn" onclick="prevPage()" class="cursor-pointer px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 text-xs font-semibold disabled:opacity-30 disabled:cursor-not-allowed transition flex items-center gap-1" disabled>
-                        <i class="fa-solid fa-chevron-left text-[10px]"></i>
-                        <span>Prev</span>
+                <div class="flex items-center space-x-2">
+                    <button id="prevPageBtn" onclick="prevPage()" class="btn-secondary" disabled>
+                        <i class="fa-solid fa-arrow-left text-xs"></i>
+                        <span>Previous 10</span>
                     </button>
 
                     <div id="pagePillsContainer" class="flex items-center space-x-1"></div>
 
-                    <button id="nextPageBtn" onclick="nextPage()" class="cursor-pointer px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 text-xs font-semibold disabled:opacity-30 disabled:cursor-not-allowed transition flex items-center gap-1" disabled>
-                        <span>Next</span>
-                        <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                    <button id="nextPageBtn" onclick="nextPage()" class="btn-secondary" disabled>
+                        <span>Next 10</span>
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
                     </button>
                 </div>
             </div>
@@ -721,114 +766,104 @@ HTML_CONTENT = """<!DOCTYPE html>
     </main>
 
     <!-- Footer -->
-    <footer class="border-t border-slate-800/80 bg-[#070B14] py-6 text-center text-xs text-slate-500">
-        <p>Built for <strong class="text-slate-300">Sarthak Joshi</strong> — Full Stack &amp; Backend Engineer • Powered by Firecrawl &amp; FastAPI</p>
+    <footer class="border-t border-zinc-800/80 bg-[#09090B] py-5 text-center text-xs text-zinc-500">
+        <p>Job Radar for <strong class="text-zinc-300">Sarthak Joshi</strong> — Full Stack &amp; Backend Engineer • Automated Daily Pipeline</p>
     </footer>
 
     <!-- ========================================== -->
-    <!-- Live Application Logs Modal (UX Enhanced) -->
+    <!-- Live Application Logs Modal -->
     <!-- ========================================== -->
-    <div id="logsModal" class="hidden fixed inset-0 z-50 bg-[#070B14]/85 backdrop-blur-md flex items-center justify-center p-4">
-        <div class="glass-panel border border-slate-700 max-w-4xl w-full rounded-2xl shadow-2xl overflow-hidden flex flex-col h-[82vh]">
+    <div id="logsModal" style="display: none;" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="card-surface border border-zinc-700 max-w-4xl w-full rounded-xl shadow-2xl overflow-hidden flex flex-col h-[80vh]">
             <!-- Terminal Header -->
-            <div class="px-5 py-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-900/80">
-                <div class="flex items-center space-x-2.5">
-                    <div class="flex space-x-1.5 mr-2">
-                        <span class="w-3 h-3 rounded-full bg-rose-500/80 inline-block"></span>
-                        <span class="w-3 h-3 rounded-full bg-amber-500/80 inline-block"></span>
-                        <span class="w-3 h-3 rounded-full bg-emerald-500/80 inline-block"></span>
-                    </div>
-                    <i class="fa-solid fa-terminal text-sky-400 text-xs"></i>
-                    <h3 class="font-bold text-white text-sm">Application Runtime &amp; Crawler Logs</h3>
-                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse ml-1.5"></span>
+            <div class="px-4 py-3 border-b border-zinc-800 flex items-center justify-between bg-zinc-900">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-terminal text-zinc-400 text-xs"></i>
+                    <span class="font-semibold text-zinc-100 text-xs">Application Runtime &amp; Crawler Logs</span>
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse ml-1"></span>
                 </div>
-                <div class="flex items-center space-x-3 text-xs">
-                    <input type="text" id="logFilterInput" oninput="filterLogs()" placeholder="Filter logs (e.g. ERROR, INFO)..." class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-slate-200 text-xs placeholder-slate-500 w-44 focus:outline-none focus:border-sky-500">
-                    <label class="flex items-center space-x-1.5 text-slate-400 cursor-pointer">
-                        <input type="checkbox" id="autoRefreshLogs" checked class="accent-sky-500 cursor-pointer">
-                        <span>Auto-stream</span>
+                <div class="flex items-center space-x-2 text-xs">
+                    <input type="text" id="logFilterInput" oninput="renderLogs()" placeholder="Filter log text..." class="bg-zinc-950 border border-zinc-800 rounded-md px-2 py-1 text-zinc-200 text-xs placeholder-zinc-500 w-36 focus:outline-none">
+                    <label class="flex items-center space-x-1.5 text-zinc-400 cursor-pointer">
+                        <input type="checkbox" id="autoRefreshLogs" checked class="accent-zinc-400 cursor-pointer">
+                        <span>Stream</span>
                     </label>
-                    <button onclick="copyLogsToClipboard()" class="cursor-pointer text-slate-300 hover:text-white px-2 py-1 rounded bg-slate-800 hover:bg-slate-700" title="Copy all logs">
-                        <i class="fa-solid fa-copy"></i>
+                    <button onclick="copyLogsToClipboard()" class="btn-ghost" title="Copy all logs">
+                        <i class="fa-regular fa-copy text-xs"></i>
                     </button>
-                    <button onclick="closeLogsModal()" class="cursor-pointer text-slate-400 hover:text-white text-base ml-2" aria-label="Close logs">
-                        <i class="fa-solid fa-xmark"></i>
+                    <button onclick="closeLogsModal()" class="btn-ghost" aria-label="Close logs">
+                        <i class="fa-solid fa-xmark text-xs"></i>
                     </button>
                 </div>
             </div>
 
             <!-- Terminal Output Console -->
-            <div id="logsConsole" class="flex-1 bg-[#050811] p-4 font-mono text-xs overflow-y-auto space-y-1 text-slate-300 leading-relaxed">
-                <!-- Log entries dynamically appended -->
-            </div>
+            <div id="logsConsole" class="flex-1 bg-[#050507] p-4 font-mono text-xs overflow-y-auto space-y-1 text-zinc-300 leading-relaxed"></div>
 
             <!-- Terminal Footer -->
-            <div class="px-5 py-2.5 border-t border-slate-800 bg-slate-900/60 flex items-center justify-between text-xs text-slate-400">
-                <span>File destination: <code class="text-sky-400 font-mono">logs/app.log</code> (Rotating)</span>
-                <button onclick="closeLogsModal()" class="cursor-pointer px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg font-medium">Close Console</button>
+            <div class="px-4 py-2 border-t border-zinc-800 bg-zinc-900 flex items-center justify-between text-xs text-zinc-500">
+                <span>File destination: <code class="text-zinc-400 font-mono">logs/app.log</code> (Rotating)</span>
+                <button onclick="closeLogsModal()" class="btn-secondary !py-1">Close</button>
             </div>
         </div>
     </div>
 
     <!-- ========================================== -->
-    <!-- Cold Outreach Modal (UX Pro Max Enhanced) -->
+    <!-- Cold Outreach Modal -->
     <!-- ========================================== -->
-    <div id="emailModal" class="hidden fixed inset-0 z-50 bg-[#070B14]/85 backdrop-blur-md flex items-center justify-center p-4">
-        <div class="glass-panel border border-slate-700 max-w-2xl w-full rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+    <div id="emailModal" style="display: none;" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="card-surface border border-zinc-700 max-w-2xl w-full rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
             <!-- Modal Header -->
-            <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/70">
-                <div class="flex items-center space-x-3">
-                    <div class="w-9 h-9 rounded-xl bg-sky-500/15 text-sky-400 flex items-center justify-center font-bold">
-                        <i class="fa-solid fa-paper-plane text-sm"></i>
-                    </div>
+            <div class="px-5 py-3.5 border-b border-zinc-800 flex items-center justify-between bg-zinc-900">
+                <div class="flex items-center space-x-2.5">
+                    <i class="fa-solid fa-paper-plane text-zinc-400 text-xs"></i>
                     <div>
-                        <h3 class="font-bold text-white text-base">Direct Recruiter Cold Outreach</h3>
-                        <p class="text-xs text-slate-400" id="modalCompanyHeader">Target: Recruiter</p>
+                        <h3 class="font-semibold text-zinc-100 text-sm">Direct Recruiter Outreach</h3>
+                        <p class="text-xs text-zinc-400" id="modalCompanyHeader">Target: Recruiter</p>
                     </div>
                 </div>
-                <button onclick="closeEmailModal()" class="cursor-pointer text-slate-400 hover:text-white text-base" aria-label="Close modal">
-                    <i class="fa-solid fa-xmark"></i>
+                <button onclick="closeEmailModal()" class="btn-ghost" aria-label="Close modal">
+                    <i class="fa-solid fa-xmark text-xs"></i>
                 </button>
             </div>
 
             <!-- Modal Content Form -->
-            <div class="p-6 overflow-y-auto space-y-4 text-xs">
+            <div class="p-5 overflow-y-auto space-y-3.5 text-xs">
                 <div>
-                    <label class="block text-slate-300 font-semibold mb-1">Recipient Email (HR / Hiring Manager / Recruiter):</label>
-                    <input type="email" id="modalRecipient" placeholder="e.g. careers@company.com or recruiter@company.com" class="w-full bg-[#070B14] border border-slate-700 rounded-lg px-3 py-2 text-slate-100 text-sm focus:border-sky-500">
+                    <label class="block text-zinc-300 font-medium mb-1">Recipient Email:</label>
+                    <input type="email" id="modalRecipient" placeholder="e.g. careers@company.com" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-100 text-xs focus:border-zinc-600 focus:outline-none">
                 </div>
 
                 <div>
-                    <label class="block text-slate-300 font-semibold mb-1">Subject Line:</label>
-                    <input type="text" id="modalSubject" class="w-full bg-[#070B14] border border-slate-700 rounded-lg px-3 py-2 text-slate-100 text-sm focus:border-sky-500">
+                    <label class="block text-zinc-300 font-medium mb-1">Subject Line:</label>
+                    <input type="text" id="modalSubject" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-100 text-xs focus:border-zinc-600 focus:outline-none">
                 </div>
 
                 <div>
                     <div class="flex items-center justify-between mb-1">
-                        <label class="block text-slate-300 font-semibold">Personalized Pitch Message:</label>
-                        <button onclick="copyPitchText()" id="copyPitchBtn" class="cursor-pointer text-sky-400 hover:text-sky-300 font-medium flex items-center gap-1 text-[11px]">
-                            <i class="fa-regular fa-copy"></i>
-                            <span id="copyPitchLabel">Copy Pitch Text</span>
+                        <label class="block text-zinc-300 font-medium">Personalized Cold Pitch:</label>
+                        <button onclick="copyPitchText()" id="copyPitchBtn" class="btn-ghost !p-1 text-xs text-zinc-400 hover:text-zinc-200">
+                            <i class="fa-regular fa-copy mr-1"></i>
+                            <span id="copyPitchLabel">Copy Text</span>
                         </button>
                     </div>
-                    <textarea id="modalBody" rows="8" class="w-full bg-[#070B14] border border-slate-700 rounded-lg p-3 text-slate-100 text-sm font-sans leading-relaxed focus:border-sky-500"></textarea>
+                    <textarea id="modalBody" rows="7" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-zinc-100 text-xs font-sans leading-relaxed focus:border-zinc-600 focus:outline-none"></textarea>
                 </div>
 
-                <!-- Verified Resume Attachment Notification -->
-                <div class="bg-gradient-to-r from-sky-950/40 to-indigo-950/40 border border-sky-500/25 rounded-xl p-3 flex items-center space-x-3 text-sky-200">
-                    <i class="fa-solid fa-file-pdf text-rose-400 text-2xl shrink-0"></i>
+                <div class="bg-zinc-900 border border-zinc-800 rounded-lg p-3 flex items-center space-x-3 text-zinc-300">
+                    <i class="fa-solid fa-file-pdf text-zinc-400 text-xl shrink-0"></i>
                     <div>
-                        <div class="font-semibold text-xs text-white">Attached Resume (Nov 2026 Edition):</div>
-                        <div class="text-[11px] text-slate-400 font-mono">sarthak_joshi_fullstack_developer_nov_2026.pdf will be automatically delivered with this email.</div>
+                        <div class="font-medium text-xs text-zinc-200">Verified Resume Attachment:</div>
+                        <div class="text-xs text-zinc-400 font-mono">sarthak_joshi_fullstack_developer_nov_2026.pdf will be attached automatically.</div>
                     </div>
                 </div>
             </div>
 
             <!-- Modal Footer Actions -->
-            <div class="px-6 py-4 border-t border-slate-800 bg-slate-900/50 flex items-center justify-between">
-                <button onclick="closeEmailModal()" class="cursor-pointer px-4 py-2 rounded-lg text-slate-400 hover:text-white transition font-medium">Cancel</button>
-                <button id="sendEmailBtn" onclick="dispatchColdEmail()" class="cursor-pointer inline-flex items-center space-x-2 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white px-5 py-2 rounded-lg font-bold text-xs shadow-lg shadow-sky-500/25 transition active:scale-95">
-                    <i class="fa-solid fa-paper-plane"></i>
+            <div class="px-5 py-3 border-t border-zinc-800 bg-zinc-900 flex items-center justify-between">
+                <button onclick="closeEmailModal()" class="btn-secondary">Cancel</button>
+                <button id="sendEmailBtn" onclick="dispatchColdEmail()" class="btn-primary">
+                    <i class="fa-solid fa-paper-plane text-xs"></i>
                     <span>Send Cold Email Now</span>
                 </button>
             </div>
@@ -848,13 +883,13 @@ HTML_CONTENT = """<!DOCTYPE html>
         let pageSize = 10;
         let totalPages = 1;
         let totalOpportunities = 0;
+        window.allJobsMap = new Map();
 
         document.addEventListener('DOMContentLoaded', () => {
             fetchStats();
             fetchJobs(1);
             checkCrawlProgress();
 
-            // Keyboard shortcut '/' to focus search input
             window.addEventListener('keydown', (e) => {
                 if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
                     e.preventDefault();
@@ -873,19 +908,19 @@ HTML_CONTENT = """<!DOCTYPE html>
             const toastIcon = document.getElementById('toastIcon');
             toastMsg.innerText = msg;
             toastIcon.className = isSuccess 
-                ? 'fa-solid fa-circle-check text-emerald-400 text-lg shrink-0' 
-                : 'fa-solid fa-circle-exclamation text-rose-400 text-lg shrink-0';
-            toast.classList.remove('hidden');
+                ? 'fa-solid fa-circle-check text-emerald-400 text-sm shrink-0' 
+                : 'fa-solid fa-circle-exclamation text-rose-400 text-sm shrink-0';
+            toast.style.display = 'flex';
             setTimeout(() => {
-                toast.classList.add('hidden');
+                toast.style.display = 'none';
             }, 4500);
         }
 
         function hideToast() {
-            document.getElementById('toast').classList.add('hidden');
+            document.getElementById('toast').style.display = 'none';
         }
 
-        // Stats & Application Funnel Retrieval
+        // Stats Retrieval
         async function fetchStats() {
             try {
                 const res = await fetch('/api/stats');
@@ -897,7 +932,7 @@ HTML_CONTENT = """<!DOCTYPE html>
                 document.getElementById('statInterviewing').innerText = data.interviewing_jobs || 0;
                 document.getElementById('statDistinctCompanies').innerText = `${data.distinct_companies || 0} Companies`;
 
-                // Update tab count badges
+                // Update tab badges
                 document.getElementById('tabCountAll').innerText = data.total_jobs || 0;
                 document.getElementById('tabCountNew').innerText = data.new_jobs || 0;
                 document.getElementById('tabCountApplied').innerText = data.applied_jobs || 0;
@@ -914,9 +949,9 @@ HTML_CONTENT = """<!DOCTYPE html>
             currentStatus = status;
             document.querySelectorAll('.status-tab').forEach(btn => {
                 if (btn.dataset.status === status) {
-                    btn.className = 'status-tab cursor-pointer px-3 py-1.5 rounded-lg font-semibold transition bg-sky-500 text-white shrink-0 flex items-center gap-1.5';
+                    btn.className = 'status-tab btn-primary shrink-0';
                 } else {
-                    btn.className = 'status-tab cursor-pointer px-3 py-1.5 rounded-lg font-semibold transition bg-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-700 shrink-0 flex items-center gap-1.5';
+                    btn.className = 'status-tab btn-secondary shrink-0';
                 }
             });
             currentPage = 1;
@@ -928,11 +963,11 @@ HTML_CONTENT = """<!DOCTYPE html>
             currentScore = val;
             document.getElementById('scoreRange').value = val;
             document.getElementById('scoreLabel').innerText = val + '%';
-            document.querySelectorAll('.score-pill').forEach(btn => {
+            document.querySelectorAll('.score-btn').forEach(btn => {
                 if (parseInt(btn.dataset.score) === val) {
-                    btn.className = 'score-pill px-2 py-1 rounded text-[11px] font-semibold bg-sky-500 text-white transition';
+                    btn.className = 'score-btn btn-primary text-xs';
                 } else {
-                    btn.className = 'score-pill px-2 py-1 rounded text-[11px] font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition';
+                    btn.className = 'score-btn btn-secondary text-xs';
                 }
             });
             currentPage = 1;
@@ -942,11 +977,11 @@ HTML_CONTENT = """<!DOCTYPE html>
         function updateScoreFilter(val) {
             currentScore = parseInt(val);
             document.getElementById('scoreLabel').innerText = val + '%';
-            document.querySelectorAll('.score-pill').forEach(btn => {
+            document.querySelectorAll('.score-btn').forEach(btn => {
                 if (parseInt(btn.dataset.score) === currentScore) {
-                    btn.className = 'score-pill px-2 py-1 rounded text-[11px] font-semibold bg-sky-500 text-white transition';
+                    btn.className = 'score-btn btn-primary text-xs';
                 } else {
-                    btn.className = 'score-pill px-2 py-1 rounded text-[11px] font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition';
+                    btn.className = 'score-btn btn-secondary text-xs';
                 }
             });
             currentPage = 1;
@@ -955,7 +990,7 @@ HTML_CONTENT = """<!DOCTYPE html>
 
         function clearSearch() {
             document.getElementById('searchInput').value = '';
-            document.getElementById('clearSearchBtn').classList.add('hidden');
+            document.getElementById('clearSearchBtn').style.display = 'none';
             currentPage = 1;
             fetchJobs(1);
         }
@@ -963,16 +998,12 @@ HTML_CONTENT = """<!DOCTYPE html>
         function debounceFetch() {
             const val = document.getElementById('searchInput').value;
             const clearBtn = document.getElementById('clearSearchBtn');
-            if (val.trim()) {
-                clearBtn.classList.remove('hidden');
-            } else {
-                clearBtn.classList.add('hidden');
-            }
+            clearBtn.style.display = val.trim() ? 'inline-flex' : 'none';
             clearTimeout(debounceTimer);
             debounceTimer = setTimeout(() => {
                 currentPage = 1;
                 fetchJobs(1);
-            }, 280);
+            }, 250);
         }
 
         // Fetch and Render Job Listings with Pagination
@@ -982,6 +1013,7 @@ HTML_CONTENT = """<!DOCTYPE html>
             const sortBy = document.getElementById('sortBy').value;
             const container = document.getElementById('jobsList');
             const paginationBar = document.getElementById('paginationBar');
+            const topPagination = document.getElementById('topPagination');
 
             let url = `/api/jobs?page=${currentPage}&limit=${pageSize}&min_score=${currentScore}&sort_by=${sortBy}`;
             if (currentStatus !== 'all') url += `&status=${currentStatus}`;
@@ -995,37 +1027,35 @@ HTML_CONTENT = """<!DOCTYPE html>
                 totalPages = data.total_pages || 1;
                 document.getElementById('jobsCount').innerText = totalOpportunities;
 
+                // Cache jobs in map
+                window.allJobsMap.clear();
+                jobs.forEach(j => window.allJobsMap.set(j._id, j));
+
                 if (jobs.length === 0) {
-                    paginationBar.classList.add('hidden');
+                    paginationBar.style.display = 'none';
+                    topPagination.style.display = 'none';
                     if (totalJobsCount === 0) {
-                        // Empty database state
                         container.innerHTML = `
-                            <div class="glass-panel rounded-2xl p-12 text-center text-slate-400 border border-slate-800">
-                                <div class="w-16 h-16 rounded-2xl bg-sky-500/10 text-sky-400 flex items-center justify-center text-2xl mx-auto mb-4">
+                            <div class="card-surface rounded-xl p-10 text-center text-zinc-400 border border-zinc-800">
+                                <div class="w-12 h-12 rounded-lg bg-zinc-800 text-zinc-400 flex items-center justify-center text-xl mx-auto mb-3">
                                     <i class="fa-solid fa-radar"></i>
                                 </div>
-                                <h3 class="text-base font-bold text-white">Database is clean and ready!</h3>
-                                <p class="text-xs text-slate-400 mt-1 max-w-md mx-auto">Click below to start live automated discovery across Firecrawl, Greenhouse ATS, and remote developer job boards.</p>
-                                <button onclick="triggerCrawl()" class="cursor-pointer mt-5 inline-flex items-center space-x-2 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white px-5 py-2.5 rounded-xl font-bold text-xs shadow-lg shadow-sky-500/20 transition active:scale-95">
-                                    <i class="fa-solid fa-arrows-rotate"></i>
+                                <h3 class="text-sm font-semibold text-zinc-100">Database is clean and ready</h3>
+                                <p class="text-xs text-zinc-400 mt-1 max-w-md mx-auto">Click below to start live automated discovery across Firecrawl, Greenhouse ATS, and remote portals.</p>
+                                <button onclick="triggerCrawl()" class="btn-primary mt-4">
+                                    <i class="fa-solid fa-arrows-rotate text-xs"></i>
                                     <span>Run Job Discovery Now</span>
                                 </button>
                             </div>
                         `;
                     } else {
-                        // Filter returned no results state
                         container.innerHTML = `
-                            <div class="glass-panel rounded-2xl p-10 text-center text-slate-400 border border-slate-800">
-                                <div class="w-12 h-12 rounded-xl bg-slate-800 text-slate-400 flex items-center justify-center text-xl mx-auto mb-3">
-                                    <i class="fa-solid fa-filter-circle-xmark"></i>
-                                </div>
-                                <h3 class="text-sm font-bold text-white">No jobs matched your current criteria</h3>
-                                <p class="text-xs text-slate-400 mt-1">Try lowering the minimum match score or clearing your search keywords.</p>
-                                <div class="mt-4 flex items-center justify-center gap-3">
-                                    <button onclick="setScorePreset(0); clearSearch(); setStatusFilter('all');" class="cursor-pointer px-4 py-2 bg-slate-800 hover:bg-slate-700 text-sky-400 text-xs font-semibold rounded-lg transition">
-                                        Reset All Filters
-                                    </button>
-                                </div>
+                            <div class="card-surface rounded-xl p-8 text-center text-zinc-400 border border-zinc-800">
+                                <h3 class="text-sm font-semibold text-zinc-100">No jobs matched your current criteria</h3>
+                                <p class="text-xs text-zinc-400 mt-1">Try lowering the minimum score or clearing search keywords.</p>
+                                <button onclick="setScorePreset(0); clearSearch(); setStatusFilter('all');" class="btn-secondary mt-3">
+                                    Reset Filters
+                                </button>
                             </div>
                         `;
                     }
@@ -1036,29 +1066,140 @@ HTML_CONTENT = """<!DOCTYPE html>
                 renderPagination(data);
             } catch(e) {
                 container.innerHTML = `<div class="text-rose-400 p-4 text-center text-xs">Failed to load jobs: ${e}</div>`;
-                paginationBar.classList.add('hidden');
+                paginationBar.style.display = 'none';
+                topPagination.style.display = 'none';
             }
         }
 
-        // Pagination Bar Renderer (UI/UX Pro Max)
+        // Render Single Job Card with High Polish (Issue 6 Fixed: h3 properly nested under h2)
+        function renderJobCard(job) {
+            const score = job.match_score || 0;
+            let badgeBg = 'bg-zinc-800 text-zinc-400 border-zinc-700';
+            let dotColor = 'bg-zinc-400';
+            if (score >= 80) {
+                badgeBg = 'bg-emerald-950/60 text-emerald-400 border-emerald-800/80';
+                dotColor = 'bg-emerald-400';
+            } else if (score >= 65) {
+                badgeBg = 'bg-zinc-800 text-zinc-200 border-zinc-700';
+                dotColor = 'bg-zinc-300';
+            } else if (score >= 50) {
+                badgeBg = 'bg-amber-950/50 text-amber-400 border-amber-800/80';
+                dotColor = 'bg-amber-400';
+            }
+
+            const company = job.company || 'Company';
+            const initial = company.charAt(0).toUpperCase();
+
+            // Highlight primary core skills
+            const coreStack = ['nestjs', 'node.js', 'nodejs', 'typescript', 'postgresql', 'redis', 'bullmq', 'docker', 'mongodb'];
+            const skillsHtml = (job.matched_skills || []).map(s => {
+                const isCore = coreStack.includes(s.toLowerCase());
+                if (isCore) {
+                    return `<span class="bg-zinc-800 text-zinc-200 border border-zinc-600 font-medium px-2 py-0.5 rounded text-xs">${s}</span>`;
+                }
+                return `<span class="bg-zinc-900 text-zinc-400 border border-zinc-800 px-2 py-0.5 rounded text-xs">${s}</span>`;
+            }).join(' ');
+
+            const dateStr = job.date_posted || 'Recently posted';
+
+            return `
+                <div class="card-interactive rounded-xl p-4 border border-zinc-800 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                    <div class="flex items-start space-x-3 flex-1 min-w-0">
+                        <!-- Company Avatar -->
+                        <div class="w-9 h-9 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center font-semibold text-xs text-zinc-200 shrink-0">
+                            ${initial}
+                        </div>
+
+                        <!-- Info Content -->
+                        <div class="space-y-1 flex-1 min-w-0">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-2 py-0.5 rounded border ${badgeBg} font-mono-numbers">
+                                    <span class="w-1.5 h-1.5 rounded-full ${dotColor}"></span>
+                                    ${score}% Match
+                                </span>
+                                <span class="text-xs text-zinc-600">•</span>
+                                <span class="text-xs text-zinc-400 bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800">
+                                    ${job.source || 'ATS Portal'}
+                                </span>
+                                <span class="text-xs text-zinc-600">•</span>
+                                <span class="text-xs text-zinc-500 font-mono-numbers">${dateStr}</span>
+                            </div>
+
+                            <!-- Role Title (h3 under h2) -->
+                            <div>
+                                <h3 class="font-semibold text-zinc-100 text-sm leading-snug tracking-tight hover:text-white transition">${escapeHtml(job.title)}</h3>
+                                <p class="text-xs text-zinc-400">
+                                    <span class="text-zinc-300 font-medium">${escapeHtml(job.company)}</span>
+                                    <span class="text-zinc-600">•</span>
+                                    <span>${escapeHtml(job.location || 'Remote')}</span>
+                                </p>
+                            </div>
+
+                            <p class="text-xs text-zinc-400 leading-relaxed line-clamp-2">${escapeHtml(job.match_summary || '')}</p>
+
+                            <div class="flex flex-wrap gap-1 pt-0.5">
+                                ${skillsHtml}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex flex-col sm:flex-row md:flex-col lg:flex-row items-stretch sm:items-center gap-2 border-t md:border-t-0 pt-3 md:pt-0 border-zinc-800 shrink-0">
+                        <select onchange="updateJobStatus('${job._id}', this.value)" class="bg-zinc-950 border border-zinc-800 rounded-lg px-2 py-1.5 text-xs font-medium text-zinc-200 focus:border-zinc-600 focus:outline-none cursor-pointer" title="Update Application Status">
+                            <option value="new" ${job.status === 'new' ? 'selected' : ''}>Status: New</option>
+                            <option value="applied" ${job.status === 'applied' ? 'selected' : ''}>Status: Applied</option>
+                            <option value="contacted" ${job.status === 'contacted' ? 'selected' : ''}>Status: Contacted</option>
+                            <option value="interviewing" ${job.status === 'interviewing' ? 'selected' : ''}>Status: Interviewing</option>
+                            <option value="saved" ${job.status === 'saved' ? 'selected' : ''}>Status: Saved</option>
+                            <option value="rejected" ${job.status === 'rejected' ? 'selected' : ''}>Status: Rejected</option>
+                        </select>
+
+                        <a href="${job.url}" target="_blank" rel="noopener noreferrer" class="btn-secondary" title="Open Career Portal Application Page">
+                            <i class="fa-solid fa-arrow-up-right-from-square text-xs text-zinc-400"></i>
+                            <span>Career Link</span>
+                        </a>
+
+                        <button onclick="openEmailModalForJob('${job._id}')" class="btn-outline text-zinc-200" title="Generate & send personalized recruiter cold email">
+                            <i class="fa-solid fa-paper-plane text-xs text-zinc-400"></i>
+                            <span>Cold Email</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Pagination Bar Renderer (100% Reliable Top & Bottom)
         function renderPagination(data) {
             const paginationBar = document.getElementById('paginationBar');
+            const topPagination = document.getElementById('topPagination');
+
             if (!data || totalOpportunities === 0) {
-                paginationBar.classList.add('hidden');
+                paginationBar.style.display = 'none';
+                topPagination.style.display = 'none';
                 return;
             }
-            paginationBar.classList.remove('hidden');
+
+            // Show top & bottom pagination bars
+            paginationBar.style.display = 'flex';
+            topPagination.style.display = 'flex';
 
             const start = (currentPage - 1) * pageSize + 1;
             const end = Math.min(totalOpportunities, currentPage * pageSize);
             document.getElementById('pageRangeText').innerText = `${start}–${end}`;
             document.getElementById('pageTotalText').innerText = totalOpportunities;
+            document.getElementById('topPageIndicator').innerText = `Page ${currentPage} / ${totalPages}`;
 
+            // Top buttons
+            document.getElementById('topPrevBtn').disabled = currentPage <= 1;
+            document.getElementById('topNextBtn').disabled = currentPage >= totalPages;
+
+            // Bottom buttons
             const prevBtn = document.getElementById('prevPageBtn');
             const nextBtn = document.getElementById('nextPageBtn');
             prevBtn.disabled = currentPage <= 1;
             nextBtn.disabled = currentPage >= totalPages;
 
+            // Page pills
             const pillsContainer = document.getElementById('pagePillsContainer');
             let pillsHtml = '';
 
@@ -1066,32 +1207,33 @@ HTML_CONTENT = """<!DOCTYPE html>
             let endPage = Math.min(totalPages, currentPage + 2);
 
             if (startPage > 1) {
-                pillsHtml += `<button onclick="goToPage(1)" class="cursor-pointer px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition">1</button>`;
+                pillsHtml += `<button onclick="goToPage(1)" class="btn-secondary !px-2.5 !py-1 text-xs font-mono-numbers">1</button>`;
                 if (startPage > 2) {
-                    pillsHtml += `<span class="text-slate-500 text-xs px-1">...</span>`;
+                    pillsHtml += `<span class="text-zinc-600 text-xs px-1">…</span>`;
                 }
             }
 
             for (let p = startPage; p <= endPage; p++) {
                 if (p === currentPage) {
-                    pillsHtml += `<button class="px-2.5 py-1 rounded-lg text-xs font-bold bg-sky-500 text-white shadow-sm transition font-mono-numbers">${p}</button>`;
+                    pillsHtml += `<button class="btn-primary !px-2.5 !py-1 text-xs font-bold font-mono-numbers">${p}</button>`;
                 } else {
-                    pillsHtml += `<button onclick="goToPage(${p})" class="cursor-pointer px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white transition font-mono-numbers">${p}</button>`;
+                    pillsHtml += `<button onclick="goToPage(${p})" class="btn-secondary !px-2.5 !py-1 text-xs font-mono-numbers">${p}</button>`;
                 }
             }
 
             if (endPage < totalPages) {
                 if (endPage < totalPages - 1) {
-                    pillsHtml += `<span class="text-slate-500 text-xs px-1">...</span>`;
+                    pillsHtml += `<span class="text-zinc-600 text-xs px-1">…</span>`;
                 }
-                pillsHtml += `<button onclick="goToPage(${totalPages})" class="cursor-pointer px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition font-mono-numbers">${totalPages}</button>`;
+                pillsHtml += `<button onclick="goToPage(${totalPages})" class="btn-secondary !px-2.5 !py-1 text-xs font-mono-numbers">${totalPages}</button>`;
             }
 
             pillsContainer.innerHTML = pillsHtml;
         }
 
         function goToPage(p) {
-            if (p < 1 || p > totalPages || p === currentPage) return;
+            if (p < 1 || p > totalPages) return;
+            currentPage = p;
             fetchJobs(p);
             const section = document.getElementById('jobsSection');
             if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1115,110 +1257,6 @@ HTML_CONTENT = """<!DOCTYPE html>
             fetchJobs(1);
         }
 
-        // Render Single Job Card with High Polish
-        function renderJobCard(job) {
-            const score = job.match_score || 0;
-            let badgeBg = 'bg-slate-800 text-slate-300 border-slate-700';
-            let dotColor = 'bg-slate-400';
-            if (score >= 80) {
-                badgeBg = 'bg-emerald-500/15 text-emerald-300 border-emerald-500/35';
-                dotColor = 'bg-emerald-400';
-            } else if (score >= 65) {
-                badgeBg = 'bg-sky-500/15 text-sky-300 border-sky-500/35';
-                dotColor = 'bg-sky-400';
-            } else if (score >= 50) {
-                badgeBg = 'bg-amber-500/15 text-amber-300 border-amber-500/35';
-                dotColor = 'bg-amber-400';
-            }
-
-            // Company initial avatar color
-            const company = job.company || 'Company';
-            const initial = company.charAt(0).toUpperCase();
-
-            // Skill Badges: Highlight Sarthak's primary stack
-            const coreStack = ['nestjs', 'node.js', 'nodejs', 'typescript', 'postgresql', 'redis', 'bullmq', 'docker', 'mongodb'];
-            const skillsHtml = (job.matched_skills || []).map(s => {
-                const isCore = coreStack.includes(s.toLowerCase());
-                if (isCore) {
-                    return `<span class="bg-sky-500/15 text-sky-200 border border-sky-500/30 font-medium px-2 py-0.5 rounded text-[11px]">${s}</span>`;
-                }
-                return `<span class="bg-slate-800/90 text-slate-300 border border-slate-700/60 px-2 py-0.5 rounded text-[11px]">${s}</span>`;
-            }).join(' ');
-
-            const dateStr = job.date_posted || 'Recently posted';
-
-            return `
-                <div class="glass-card rounded-2xl p-5 border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div class="flex items-start space-x-3.5 flex-1 min-w-0">
-                        <!-- Company Avatar -->
-                        <div class="w-11 h-11 rounded-xl bg-gradient-to-tr from-slate-800 to-slate-700 border border-slate-700/80 flex items-center justify-center font-bold text-base text-white shrink-0 shadow-sm">
-                            ${initial}
-                        </div>
-
-                        <!-- Info Content -->
-                        <div class="space-y-1.5 flex-1 min-w-0">
-                            <!-- Metatags row -->
-                            <div class="flex flex-wrap items-center gap-2">
-                                <span class="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-0.5 rounded-full border ${badgeBg} font-mono-numbers">
-                                    <span class="w-1.5 h-1.5 rounded-full ${dotColor}"></span>
-                                    ${score}% Match
-                                </span>
-                                <span class="text-xs text-slate-400">•</span>
-                                <span class="text-[11px] font-semibold text-slate-300 bg-slate-800/80 px-2 py-0.5 rounded border border-slate-700/70">
-                                    <i class="fa-solid fa-layer-group text-[10px] text-slate-400 mr-1"></i>${job.source || 'ATS Career Portal'}
-                                </span>
-                                <span class="text-xs text-slate-400">•</span>
-                                <span class="text-[11px] text-slate-400 font-mono-numbers">${dateStr}</span>
-                            </div>
-
-                            <!-- Role & Company -->
-                            <div>
-                                <h3 class="font-bold text-white text-base leading-snug tracking-tight hover:text-sky-300 transition">${escapeHtml(job.title)}</h3>
-                                <p class="text-xs text-slate-300 font-medium">
-                                    ${escapeHtml(job.company)} 
-                                    <span class="text-slate-500">•</span> 
-                                    <span class="text-slate-400"><i class="fa-solid fa-location-dot text-[10px] mr-1"></i>${escapeHtml(job.location || 'Remote')}</span>
-                                </p>
-                            </div>
-
-                            <!-- Match Summary -->
-                            <p class="text-xs text-slate-400 leading-relaxed line-clamp-2">${escapeHtml(job.match_summary || '')}</p>
-
-                            <!-- Matched Skills Chips -->
-                            <div class="flex flex-wrap gap-1.5 pt-1">
-                                ${skillsHtml}
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Action Controls Right Column -->
-                    <div class="flex flex-col sm:flex-row md:flex-col lg:flex-row items-stretch sm:items-center gap-2 border-t md:border-t-0 pt-3 md:pt-0 border-slate-800/80 shrink-0">
-                        <!-- Quick Status Dropdown -->
-                        <select onchange="updateJobStatus('${job._id}', this.value)" class="cursor-pointer bg-[#070B14] border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-200 transition focus:border-sky-500" title="Update Application Status">
-                            <option value="new" ${job.status === 'new' ? 'selected' : ''}>Status: New</option>
-                            <option value="applied" ${job.status === 'applied' ? 'selected' : ''}>Status: Applied</option>
-                            <option value="contacted" ${job.status === 'contacted' ? 'selected' : ''}>Status: Cold Contacted</option>
-                            <option value="interviewing" ${job.status === 'interviewing' ? 'selected' : ''}>Status: Interviewing</option>
-                            <option value="saved" ${job.status === 'saved' ? 'selected' : ''}>Status: Saved</option>
-                            <option value="rejected" ${job.status === 'rejected' ? 'selected' : ''}>Status: Rejected</option>
-                        </select>
-
-                        <!-- Direct Career Link -->
-                        <a href="${job.url}" target="_blank" rel="noopener noreferrer" class="cursor-pointer inline-flex items-center justify-center space-x-1.5 bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-semibold transition active:scale-95" title="Open Career Portal Application Page">
-                            <i class="fa-solid fa-arrow-up-right-from-square text-sky-400 text-xs"></i>
-                            <span>Career Link</span>
-                        </a>
-
-                        <!-- Direct Cold Email Button -->
-                        <button onclick="openEmailModal('${job._id}', '${escapeAttr(job.company)}', '${escapeAttr(job.contact_email || 'careers@company.com')}', '${encodeURIComponent(job.cold_outreach_subject || '')}', '${encodeURIComponent(job.cold_outreach_body || '')}')" class="cursor-pointer inline-flex items-center justify-center space-x-1.5 bg-sky-500/20 hover:bg-sky-500/30 text-sky-200 border border-sky-500/40 px-3.5 py-1.5 rounded-lg text-xs font-bold transition active:scale-95" title="Generate & send personalized recruiter cold email with attached resume">
-                            <i class="fa-solid fa-paper-plane text-xs text-sky-300"></i>
-                            <span>Cold Email</span>
-                        </button>
-                    </div>
-                </div>
-            `;
-        }
-
         // Job Status Update via API
         async function updateJobStatus(jobId, newStatus) {
             try {
@@ -1238,31 +1276,31 @@ HTML_CONTENT = """<!DOCTYPE html>
             }
         }
 
-        // Cold Outreach Modal Open / Close
-        function openEmailModal(jobId, company, contactEmail, encodedSubject, encodedBody) {
+        // Cold Outreach Modal
+        function openEmailModalForJob(jobId) {
+            const job = window.allJobsMap.get(jobId);
+            if (!job) return;
             activeJobId = jobId;
-            document.getElementById('modalCompanyHeader').innerText = `Target Company: ${company}`;
-            document.getElementById('modalRecipient').value = contactEmail;
-            document.getElementById('modalSubject').value = decodeURIComponent(encodedSubject);
-            document.getElementById('modalBody').value = decodeURIComponent(encodedBody);
-            document.getElementById('copyPitchLabel').innerText = "Copy Pitch Text";
-            document.getElementById('emailModal').classList.remove('hidden');
+            document.getElementById('modalCompanyHeader').innerText = `Target Company: ${job.company || 'Company'}`;
+            document.getElementById('modalRecipient').value = job.contact_email || 'careers@company.com';
+            document.getElementById('modalSubject').value = job.cold_outreach_subject || `Application for ${job.title || 'Role'} - Sarthak Joshi`;
+            document.getElementById('modalBody').value = job.cold_outreach_body || '';
+            document.getElementById('copyPitchLabel').innerText = "Copy Text";
+            document.getElementById('emailModal').style.display = 'flex';
         }
 
         function closeEmailModal() {
-            document.getElementById('emailModal').classList.add('hidden');
+            document.getElementById('emailModal').style.display = 'none';
             activeJobId = null;
         }
 
         function copyPitchText() {
             const body = document.getElementById('modalBody').value;
             navigator.clipboard.writeText(body).then(() => {
-                document.getElementById('copyPitchLabel').innerText = "Copied to Clipboard!";
+                document.getElementById('copyPitchLabel').innerText = "Copied!";
                 setTimeout(() => {
-                    document.getElementById('copyPitchLabel').innerText = "Copy Pitch Text";
-                }, 2500);
-            }).catch(e => {
-                console.error("Copy failed:", e);
+                    document.getElementById('copyPitchLabel').innerText = "Copy Text";
+                }, 2000);
             });
         }
 
@@ -1277,7 +1315,7 @@ HTML_CONTENT = """<!DOCTYPE html>
 
             const btn = document.getElementById('sendEmailBtn');
             btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i><span>Sending via Gmail SMTP...</span>`;
+            btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin text-xs"></i><span>Sending via Gmail...</span>`;
 
             const payload = {
                 recipient_email: recipient,
@@ -1293,18 +1331,18 @@ HTML_CONTENT = """<!DOCTYPE html>
                 });
                 const data = await res.json();
                 if (res.ok) {
-                    showToast('🎉 Cold email dispatched successfully with attached resume!');
+                    showToast('Cold email dispatched with attached resume!');
                     closeEmailModal();
-                    fetchJobs();
+                    fetchJobs(currentPage);
                     fetchStats();
                 } else {
                     showToast(data.detail || 'Failed to dispatch email', false);
                 }
             } catch(e) {
-                showToast('Network error sending email: ' + e, false);
+                showToast('Network error: ' + e, false);
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i><span>Send Cold Email Now</span>`;
+                btn.innerHTML = `<i class="fa-solid fa-paper-plane text-xs"></i><span>Send Cold Email Now</span>`;
             }
         }
 
@@ -1315,7 +1353,7 @@ HTML_CONTENT = """<!DOCTYPE html>
             const banner = document.getElementById('crawlBanner');
             btn.disabled = true;
             icon.classList.add('fa-spin');
-            banner.classList.remove('hidden');
+            banner.style.display = 'block';
 
             try {
                 const res = await fetch('/api/trigger', { method: 'POST' });
@@ -1326,7 +1364,7 @@ HTML_CONTENT = """<!DOCTYPE html>
                 showToast('Failed to start crawler: ' + e, false);
                 btn.disabled = false;
                 icon.classList.remove('fa-spin');
-                banner.classList.add('hidden');
+                banner.style.display = 'none';
             }
         }
 
@@ -1342,12 +1380,12 @@ HTML_CONTENT = """<!DOCTYPE html>
                         const icon = document.getElementById('triggerIcon');
                         btn.disabled = false;
                         icon.classList.remove('fa-spin');
-                        banner.classList.add('hidden');
+                        banner.style.display = 'none';
                         showToast('Discovery complete! Database updated.');
                         fetchStats();
-                        fetchJobs();
+                        fetchJobs(currentPage);
                     } else {
-                        banner.classList.remove('hidden');
+                        banner.style.display = 'block';
                     }
                 } catch(e) {
                     clearInterval(interval);
@@ -1357,14 +1395,14 @@ HTML_CONTENT = """<!DOCTYPE html>
 
         // Reset Database Confirmation
         async function confirmResetDB() {
-            if (confirm("Are you sure you want to empty MongoDB and clear all generated Excel reports? This enables a completely fresh crawl and test run.")) {
+            if (confirm("Are you sure you want to empty MongoDB and clear all generated reports? This enables a completely fresh crawl and test run.")) {
                 try {
                     const res = await fetch('/api/database/clear', { method: 'DELETE' });
                     const data = await res.json();
                     if (res.ok) {
-                        showToast("Database & reports successfully cleared!");
+                        showToast("Database & reports cleared!");
                         fetchStats();
-                        fetchJobs();
+                        fetchJobs(1);
                     } else {
                         showToast(data.detail || "Failed to clear database", false);
                     }
@@ -1376,7 +1414,7 @@ HTML_CONTENT = """<!DOCTYPE html>
 
         // Terminal Live Logs Modal Functions
         function openLogsModal() {
-            document.getElementById('logsModal').classList.remove('hidden');
+            document.getElementById('logsModal').style.display = 'flex';
             fetchLiveLogs();
             if (logsInterval) clearInterval(logsInterval);
             logsInterval = setInterval(() => {
@@ -1387,7 +1425,7 @@ HTML_CONTENT = """<!DOCTYPE html>
         }
 
         function closeLogsModal() {
-            document.getElementById('logsModal').classList.add('hidden');
+            document.getElementById('logsModal').style.display = 'none';
             if (logsInterval) clearInterval(logsInterval);
         }
 
@@ -1402,10 +1440,6 @@ HTML_CONTENT = """<!DOCTYPE html>
             }
         }
 
-        function filterLogs() {
-            renderLogs();
-        }
-
         function renderLogs() {
             const container = document.getElementById('logsConsole');
             const query = (document.getElementById('logFilterInput').value || '').toLowerCase();
@@ -1414,15 +1448,15 @@ HTML_CONTENT = """<!DOCTYPE html>
                 : cachedRawLogs;
 
             if (filtered.length === 0) {
-                container.innerHTML = '<span class="text-slate-500 italic">No log entries matched.</span>';
+                container.innerHTML = '<span class="text-zinc-500 italic">No log entries matched.</span>';
                 return;
             }
 
             container.innerHTML = filtered.map(line => {
-                let color = 'text-slate-300';
-                if (line.includes('[ERROR]')) color = 'text-rose-400 font-semibold';
+                let color = 'text-zinc-300';
+                if (line.includes('[ERROR]')) color = 'text-rose-400 font-medium';
                 else if (line.includes('[WARNING]')) color = 'text-amber-400 font-medium';
-                else if (line.includes('[INFO]')) color = 'text-sky-300';
+                else if (line.includes('[INFO]')) color = 'text-zinc-300';
                 return `<div class="${color}">${escapeHtml(line)}</div>`;
             }).join('');
 
@@ -1432,7 +1466,7 @@ HTML_CONTENT = """<!DOCTYPE html>
         function copyLogsToClipboard() {
             const text = cachedRawLogs.join('\\n');
             navigator.clipboard.writeText(text).then(() => {
-                showToast("All log entries copied to clipboard!");
+                showToast("All logs copied to clipboard!");
             });
         }
 
@@ -1445,11 +1479,6 @@ HTML_CONTENT = """<!DOCTYPE html>
                 .replace(/>/g, "&gt;")
                 .replace(/"/g, "&quot;")
                 .replace(/'/g, "&#039;");
-        }
-
-        function escapeAttr(text) {
-            if (!text) return '';
-            return String(text).replace(/'/g, "\\\\'").replace(/"/g, '&quot;');
         }
     </script>
 </body>

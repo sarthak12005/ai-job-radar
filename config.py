@@ -28,6 +28,13 @@ RECIPIENT_EMAIL = os.getenv("RECIPIENT_EMAIL", CANDIDATE_EMAIL)
 FIRECRAWL_API_KEY = os.getenv("FIRECRAWL_API_KEY", "")
 FIRECRAWL_API_URL = os.getenv("FIRECRAWL_API_URL", "https://api.firecrawl.dev")
 
+# Match Score Threshold
+MIN_MATCH_SCORE = int(os.getenv("MIN_MATCH_SCORE", "70"))
+
+# Freshness & Text Extraction Thresholds
+MAX_JOB_AGE_DAYS = int(os.getenv("MAX_JOB_AGE_DAYS", "14"))
+MAX_JD_CHAR_LIMIT = int(os.getenv("MAX_JD_CHAR_LIMIT", "5000"))
+
 # AI & LLM Pitch Generation (Gemini API)
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 

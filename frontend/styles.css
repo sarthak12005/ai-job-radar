@@ -1,0 +1,470 @@
+/* ==========================================================================
+   AI Job Radar & Recruiter Outreach Hub - Design System & Custom Tokens
+   UI/UX Pro Max Architecture: Dark Mode (OLED / Zinc-950), WCAG Contrast 4.5:1+
+   Animations: Stagger entrance, skeleton shimmer, counter, modal slide-up,
+                toast spring, score badge pop, search glow, page crossfade
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+    --bg-base: #09090b;
+    --bg-card: #121215;
+    --bg-card-hover: #18181c;
+    --bg-elevated: #1f1f24;
+    --border-subtle: #27272a;
+    --border-strong: #3f3f46;
+    --text-primary: #f4f4f5;
+    --text-secondary: #a1a1aa;
+    --text-muted: #71717a;
+    --accent-emerald: #10b981;
+    --accent-sky: #0ea5e9;
+    --accent-amber: #f59e0b;
+    --accent-rose: #f43f5e;
+    --accent-violet: #8b5cf6;
+
+    /* Animation timing tokens */
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+    --duration-micro: 150ms;
+    --duration-short: 250ms;
+    --duration-medium: 400ms;
+    --duration-long: 600ms;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: var(--bg-base);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+}
+
+.font-mono-code {
+    font-family: 'JetBrains Mono', monospace;
+}
+
+/* ============================================================
+   CARD SURFACE
+   ============================================================ */
+.card-surface {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    transition: border-color var(--duration-micro) var(--ease-standard),
+                background-color var(--duration-micro) var(--ease-standard),
+                box-shadow var(--duration-short) var(--ease-standard),
+                transform var(--duration-short) var(--ease-standard);
+}
+.card-surface:hover {
+    border-color: var(--border-strong);
+    background-color: var(--bg-card-hover);
+}
+
+/* ============================================================
+   CUSTOM SCROLLBARS
+   ============================================================ */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #09090b; }
+::-webkit-scrollbar-thumb { background: #27272a; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+.btn-primary {
+    background-color: #f4f4f5;
+    color: #09090b;
+    font-weight: 600;
+    font-size: 0.75rem;
+    padding: 0.5rem 0.875rem;
+    border-radius: 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    cursor: pointer;
+    transition: background-color var(--duration-micro) ease,
+                box-shadow var(--duration-micro) ease,
+                transform var(--duration-micro) ease;
+    border: 1px solid transparent;
+}
+.btn-primary:hover { background-color: #ffffff; box-shadow: 0 0 12px rgba(244,244,245,0.15); }
+.btn-primary:active { transform: scale(0.96); }
+.btn-primary:focus-visible { outline: 2px solid #ffffff; outline-offset: 2px; }
+
+.btn-secondary {
+    background-color: #18181b;
+    color: #e4e4e7;
+    font-weight: 500;
+    font-size: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    cursor: pointer;
+    border: 1px solid var(--border-subtle);
+    transition: background-color var(--duration-micro) ease,
+                color var(--duration-micro) ease,
+                border-color var(--duration-micro) ease,
+                transform var(--duration-micro) ease;
+}
+.btn-secondary:hover { background-color: #27272a; color: #ffffff; border-color: var(--border-strong); }
+.btn-secondary:active { transform: scale(0.96); }
+.btn-secondary:focus-visible { outline: 2px solid #10b981; outline-offset: 2px; }
+.btn-secondary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.btn-outline {
+    background-color: transparent;
+    color: #d4d4d8;
+    font-weight: 500;
+    font-size: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    cursor: pointer;
+    border: 1px solid var(--border-subtle);
+    transition: background-color var(--duration-micro) ease,
+                color var(--duration-micro) ease,
+                border-color var(--duration-micro) ease,
+                transform var(--duration-micro) ease;
+}
+.btn-outline:hover { background-color: #18181b; color: #ffffff; border-color: var(--border-strong); }
+.btn-outline:active { transform: scale(0.96); }
+
+.btn-ghost {
+    background-color: transparent;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    cursor: pointer;
+    transition: color var(--duration-micro) ease;
+}
+.btn-ghost:hover { color: #ffffff; }
+
+/* ============================================================
+   SEARCH INPUT FOCUS GLOW
+   ============================================================ */
+#searchInput {
+    transition: border-color var(--duration-micro) ease,
+                box-shadow var(--duration-short) ease;
+}
+#searchInput:focus {
+    border-color: #52525b !important;
+    box-shadow: 0 0 0 3px rgba(161, 161, 170, 0.12);
+}
+
+/* ============================================================
+   MODAL BACKDROP
+   ============================================================ */
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(8px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    padding: 1rem;
+    opacity: 0;
+    transition: opacity var(--duration-short) ease;
+}
+.modal-backdrop.modal-open {
+    display: flex;
+    opacity: 1;
+}
+.modal-backdrop.modal-closing {
+    opacity: 0;
+}
+
+/* Modal panel: slides up into view */
+.modal-backdrop > div {
+    transform: translateY(20px) scale(0.98);
+    opacity: 0;
+    transition: transform var(--duration-medium) var(--ease-out-expo),
+                opacity var(--duration-short) ease;
+}
+.modal-backdrop.modal-open > div {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+}
+.modal-backdrop.modal-closing > div {
+    transform: translateY(12px) scale(0.98);
+    opacity: 0;
+}
+
+/* ============================================================
+   STAT CARDS — counter mount animation
+   ============================================================ */
+.stat-counter {
+    display: inline-block;
+    transition: opacity var(--duration-short) ease;
+}
+/* Fade in stat card section */
+@keyframes statCardReveal {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+[aria-label="System Metrics"] > div {
+    animation: statCardReveal var(--duration-medium) var(--ease-out-expo) both;
+}
+[aria-label="System Metrics"] > div:nth-child(1) { animation-delay: 60ms; }
+[aria-label="System Metrics"] > div:nth-child(2) { animation-delay: 120ms; }
+[aria-label="System Metrics"] > div:nth-child(3) { animation-delay: 180ms; }
+[aria-label="System Metrics"] > div:nth-child(4) { animation-delay: 240ms; }
+
+/* ============================================================
+   JOB CARD STAGGERED ENTRANCE
+   ============================================================ */
+@keyframes cardSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(18px) scale(0.985);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.job-card-animate {
+    opacity: 0;
+    animation: cardSlideUp var(--duration-medium) var(--ease-out-expo) both;
+}
+
+/* Hover lift for job cards */
+article.card-surface:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.6),
+                0 0 0 1px rgba(63, 63, 70, 0.6);
+}
+
+/* ============================================================
+   MATCH SCORE BADGE — spring pop on render
+   ============================================================ */
+@keyframes badgePop {
+    0%   { transform: scale(0.7); opacity: 0; }
+    60%  { transform: scale(1.1); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+}
+.score-badge-pop {
+    display: inline-flex;
+    animation: badgePop 380ms var(--ease-spring) both;
+    animation-delay: var(--badge-delay, 0ms);
+}
+
+/* ============================================================
+   SKELETON LOADING SHIMMER
+   ============================================================ */
+@keyframes shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.skeleton-base {
+    background: linear-gradient(
+        90deg,
+        #18181b 0%,
+        #27272a 40%,
+        #313136 50%,
+        #27272a 60%,
+        #18181b 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.6s linear infinite;
+    border-radius: 0.375rem;
+}
+
+.skeleton-card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+}
+.skeleton-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 0.75rem;
+    flex-shrink: 0;
+}
+.skeleton-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-top: 2px;
+}
+.skeleton-line {
+    height: 12px;
+    width: 100%;
+}
+.skeleton-line.w-3-4  { width: 75%; }
+.skeleton-line.w-1-2  { width: 50%; }
+.skeleton-line.w-1-3  { width: 33%; }
+.skeleton-line.h-sm   { height: 10px; }
+.skeleton-line.h-lg   { height: 16px; }
+.skeleton-tags {
+    display: flex;
+    gap: 6px;
+    margin-top: 2px;
+}
+.skeleton-tag {
+    height: 20px;
+    width: 52px;
+    border-radius: 4px;
+}
+.skeleton-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-end;
+    flex-shrink: 0;
+    min-width: 100px;
+}
+.skeleton-btn {
+    height: 32px;
+    width: 90px;
+    border-radius: 8px;
+}
+
+/* ============================================================
+   PAGE CROSSFADE (pagination transitions)
+   ============================================================ */
+@keyframes pageFadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.page-transition-in {
+    animation: pageFadeIn var(--duration-short) var(--ease-out-expo) both;
+}
+
+/* ============================================================
+   TOAST — spring entrance + smooth exit
+   ============================================================ */
+@keyframes toastSlideIn {
+    from { opacity: 0; transform: translateY(16px) scale(0.92); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes toastSlideOut {
+    from { opacity: 1; transform: translateY(0) scale(1); }
+    to   { opacity: 0; transform: translateY(8px) scale(0.95); }
+}
+#toast.toast-show {
+    animation: toastSlideIn 350ms var(--ease-spring) forwards;
+    pointer-events: auto;
+}
+#toast.toast-hide {
+    animation: toastSlideOut 220ms ease forwards;
+    pointer-events: none;
+}
+
+/* ============================================================
+   FILTER SECTION — subtle reveal
+   ============================================================ */
+@keyframes filterReveal {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+[aria-label="Filters and Search"] {
+    animation: filterReveal var(--duration-medium) var(--ease-out-expo) 200ms both;
+}
+
+/* ============================================================
+   SCORE BUTTON ACTIVE TRANSITION
+   ============================================================ */
+.score-btn {
+    transition: background-color var(--duration-micro) ease,
+                color var(--duration-micro) ease,
+                transform var(--duration-micro) var(--ease-spring);
+}
+.score-btn:active { transform: scale(0.93); }
+
+/* ============================================================
+   STATUS TABS
+   ============================================================ */
+.status-tab {
+    transition: background-color var(--duration-micro) ease,
+                color var(--duration-micro) ease,
+                transform var(--duration-micro) var(--ease-spring);
+}
+.status-tab:active { transform: scale(0.95); }
+
+/* ============================================================
+   HEADER — fade down on mount
+   ============================================================ */
+@keyframes headerFadeDown {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+header {
+    animation: headerFadeDown var(--duration-long) var(--ease-out-expo) both;
+}
+
+/* ============================================================
+   PULSING LIVE BEACON
+   ============================================================ */
+.pulsing-beacon {
+    position: relative;
+    display: inline-flex;
+}
+.pulsing-beacon::after {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 9999px;
+    background-color: #10b981;
+    opacity: 0.45;
+    animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+@keyframes ping {
+    75%, 100% {
+        transform: scale(2.2);
+        opacity: 0;
+    }
+}
+
+/* Crawling beacon turns amber */
+.beacon-scanning::after {
+    background-color: #f59e0b;
+}
+
+/* ============================================================
+   FOCUS RING UTILITY
+   ============================================================ */
+.focus-ring:focus {
+    outline: 2px solid #10b981;
+    outline-offset: 1px;
+}
+
+/* ============================================================
+   PREFERS-REDUCED-MOTION — kill all animations for a11y
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    .modal-backdrop,
+    .modal-backdrop > div {
+        transition: none !important;
+    }
+    .skeleton-base {
+        animation: none !important;
+        background: #27272a;
+    }
+}

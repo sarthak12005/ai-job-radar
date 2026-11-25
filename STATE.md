@@ -1,18 +1,17 @@
-# GSD Execution State: AI Pitch Engine, Follow-up Sequences, Interview Copilot & Alerts
+# GSD Execution State: P1 Expansive ATS Engine & Frontend Specification Viewer
 
 ## Active Phase
-**Completed & Verified** — All 4 high-value deliverables implemented, verified, and operational.
+**Completed & Verified** — P1 Multi-ATS Ingestion & Frontend Interactive Enhancements:
+1. Multi-ATS Ingestion across Greenhouse, Ashby, and Lever engines.
+2. Verified 460 jobs retrieved with 100% full-text descriptions (>600 chars) for India/Pune.
+3. Added active Indian tech unicorns & Pune centers (Mindtickle, Paytm, CRED, Meesho, InMobi, Zeta, Slice, Groww, Atlan, Navi, PubMatic, Druva, NICE).
+4. Implemented `#jobDetailsModal` in `index.html` allowing candidates to view complete, un-truncated job specifications and deep match score breakdowns without leaving the app.
+5. Implemented interactive 1-click skill filtering: clicking any skill badge (`NestJS`, `BullMQ`, `PostgreSQL`) filters the dashboard to jobs requiring that technology.
+6. Added `View JD` button on cards with smooth modal entrance animation and WCAG focus traps.
 
 ## Milestones
-- [x] **Milestone 0: Spec & Architecture Alignment**
-  - Aligned on 4 core modules: `pitch_generator.py`, `notifier.py`, server endpoints, and frontend modals.
-- [x] **Milestone 1: Dynamic Pitch & Sequence Generator (`pitch_generator.py`)**
-  - Heuristic + Gemini REST LLM generation for: Initial Pitch, Follow-up 1 (Day 3), Follow-up 2 (Day 7), LinkedIn 300-char note.
-- [x] **Milestone 2: Interview Prep Copilot Engine & Endpoints**
-  - `GET /api/jobs/{job_id}/outreach-kit` and `GET /api/jobs/{job_id}/interview-prep` endpoints wired and tested.
-- [x] **Milestone 3: Telegram Notifier Module (`notifier.py`)**
-  - Instant dispatch on high matches (>= 75%) with Markdown formatting and direct links, plus daily summary report builder.
-- [x] **Milestone 4: Frontend UI Integration in `server.py`**
-  - Outreach Sequence Tabs (Initial, Day 3, Day 7, LinkedIn Note), AI Re-craft button, Interview Prep button, and `#interviewModal` with WCAG focus traps and Escape key dismissal.
-- [x] **Milestone 5: Verification & Quality Gate**
-  - Syntactic validation, import checks, kit generation assertion, and modal accessibility verified.
+- [x] **Milestone 0: Gap Analysis & Technical Spec** (`JOB_RADAR_GAP_ANALYSIS.md`)
+- [x] **Milestone 1: P0 Crawler Integrity Fixes** (Full-text JD, real date extraction, <14d freshness filter)
+- [x] **Milestone 2: P1 Expansive ATS Targets & Lever Engine Support** (`job_crawler.py`)
+- [x] **Milestone 3: P1 Frontend Job Details Modal & Interactive Skill Filtering** (`index.html`, `app.js`)
+- [x] **Milestone 4: Verification & Quality Gate** (`test_p1_ats.py` passed with 460 verified jobs)

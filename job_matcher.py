@@ -57,7 +57,11 @@ class JobMatcher:
                 matched_skills.append(skill.title() if not skill.endswith("js") else skill)
 
         # High priority skills get weighted boost
-        high_val = ["nestjs", "node.js", "nodejs", "typescript", "postgresql", "redis", "prisma", "bullmq", "rest api", "rest apis"]
+        high_val = [
+            "nestjs", "node.js", "nodejs", "typescript", "postgresql", 
+            "redis", "prisma", "bullmq", "rest api", "rest apis", 
+            "docker", "microservices", "mongodb"
+        ]
         high_matches = [s for s in matched_skills if s.lower() in high_val]
 
         skill_ratio = len(matched_skills) / max(len(self.skills), 1)
@@ -87,13 +91,13 @@ class JobMatcher:
 
         if min_req is not None:
             if min_req <= 2.5:
-                exp_score = 15  # Perfect for 1.8 years
+                exp_score = 15  # Direct fit for 1.8 years
             elif min_req <= 3.5:
-                exp_score = 12  # Reachable mid-level
+                exp_score = 13  # High-fit reachable mid-level (Sarthak's 300K+ user scale fits 3 yrs)
             elif min_req <= 5.0:
-                exp_score = 6   # Stretch
+                exp_score = 8   # Stretch role
             else:
-                exp_score = 2   # Senior (5+ yrs)
+                exp_score = 3   # Senior (5+ yrs)
 
         # 4. Location Match (Max 10)
         loc_score = 5
@@ -124,7 +128,26 @@ class JobMatcher:
         # Check specific state/hub preference
         if target_state and target_state.lower() not in ["all", "all india", "all us", "any location", "any remote", ""]:
             clean_ts = target_state.split("(")[0].strip().lower()
-            if clean_ts and clean_ts in location:
+            if clean_ts == "pune":
+                pune_localities = [
+                    "pune", "hinjewadi", "hinjawadi", "baner", "magarpatta",
+                    "kharadi", "viman nagar", "kalyani nagar", "hadapsar",
+                    "wakad", "shivajinagar", "senapati bapat", "yerwada",
+                    "kothrud", "aundh", "bavdhan", "maharashtra"
+                ]
+                if any(pl in location for pl in pune_localities):
+                    loc_score = 10
+                    seniority_adj += 5  # Direct bonus for Pune locality match
+                    loc_tag = "Pune Direct Hub"
+                elif "remote" in location or "india" in location:
+                    loc_score = 9
+                    loc_tag = "Remote / India (Pune Eligible)"
+                elif any(other_c in location for other_c in ["bangalore", "bengaluru", "delhi", "gurgaon", "noida", "hyderabad", "chennai"]):
+                    # On-site outside Pune when candidate explicitly requested Pune
+                    loc_score = 2
+                    seniority_adj -= 10
+                    loc_tag = "Outside Pune (On-Site)"
+            elif clean_ts and clean_ts in location:
                 loc_score = 10
                 loc_tag = f"{clean_ts.title()} Hub Direct"
 

@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Job Radar & Recruiter Outreach Hub | Sarthak Joshi</title>
+    
+    <!-- Meta tags for security and SEO -->
+    <meta name="description" content="AI-powered Job Discovery, Resume Matching, and Recruiter Outreach Copilot for Sarthak Joshi.">
+    <meta name="theme-color" content="#09090b">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        zinc: {
+                            850: '#1e1e24',
+                            950: '#09090b',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Font Awesome Icons & Custom Design System Stylesheet -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-zinc-950 text-zinc-100 min-h-screen flex flex-col antialiased selection:bg-emerald-500/30 selection:text-emerald-200">
+
+    <!-- Top Navigation & Branding Header -->
+    <header class="border-b border-zinc-800/80 bg-zinc-950/90 backdrop-blur sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-4">
+            <!-- Left Branding -->
+            <div class="flex items-center space-x-3">
+                <div class="w-9 h-9 rounded-lg bg-zinc-900 border border-zinc-700 flex items-center justify-center text-emerald-400 text-base shadow-sm">
+                    <i class="fa-solid fa-radar"></i>
+                </div>
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <h1 class="text-sm font-semibold tracking-tight text-white flex items-center gap-1.5">
+                            AI Job Radar
+                            <span class="text-[10px] uppercase font-mono-code px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700">v2.5 Pro</span>
+                        </h1>
+                    </div>
+                    <p class="text-xs text-zinc-400 flex items-center gap-1.5 mt-0.5">
+                        <span>Target: Backend & Full Stack</span>
+                        <span class="text-zinc-600">•</span>
+                        <span id="activeCandidateName" class="text-zinc-300 font-medium">Sarthak Joshi</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Middle Crawler Status Beacon -->
+            <div id="crawlerStatusBar" class="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded-full bg-zinc-900 border border-zinc-800 text-xs">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 pulsing-beacon"></span>
+                <span id="crawlerStatusText" class="text-zinc-300 font-medium text-[11px]">Crawler Engine Ready</span>
+                <span class="text-zinc-600 text-[10px]">•</span>
+                <span id="lastCrawlTime" class="text-zinc-400 text-[11px] font-mono-code">Checking...</span>
+            </div>
+
+            <!-- Right Quick Action Bar -->
+            <div class="flex items-center space-x-2">
+                <button onclick="openCrawlModal()" class="btn-primary" title="Trigger a live crawler scan with customized location">
+                    <i class="fa-solid fa-bolt text-xs text-amber-500"></i>
+                    <span>Run Discovery</span>
+                </button>
+                <a href="/api/export-excel" download class="btn-secondary" title="Download matching jobs as formatted Excel report">
+                    <i class="fa-solid fa-file-excel text-emerald-400 text-xs"></i>
+                    <span class="hidden md:inline">Export Excel</span>
+                </a>
+                <button onclick="openLogsModal()" class="btn-secondary" title="Open live crawler log stream">
+                    <i class="fa-solid fa-terminal text-xs text-zinc-400"></i>
+                    <span class="hidden md:inline">Logs</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex-1 w-full space-y-6">
+
+        <!-- Metrics & Pipeline Stats Cluster -->
+        <section aria-label="System Metrics" class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div class="card-surface p-3.5 rounded-xl border border-zinc-800/80">
+                <div class="flex items-center justify-between text-zinc-400 mb-1">
+                    <span class="text-xs font-medium">Total Tracked</span>
+                    <i class="fa-solid fa-briefcase text-xs text-zinc-500"></i>
+                </div>
+                <div class="text-xl font-bold text-white font-mono-code" id="statTotal">--</div>
+                <div class="text-[11px] text-zinc-400 mt-0.5 truncate" id="statDistinctCompanies">-- Companies</div>
+            </div>
+
+            <div class="card-surface p-3.5 rounded-xl border border-zinc-800/80">
+                <div class="flex items-center justify-between text-zinc-400 mb-1">
+                    <span class="text-xs font-medium text-emerald-400">High Matches (≥70%)</span>
+                    <i class="fa-solid fa-bullseye text-xs text-emerald-400"></i>
+                </div>
+                <div class="text-xl font-bold text-emerald-300 font-mono-code" id="statHigh">--</div>
+                <div class="text-[11px] text-zinc-400 mt-0.5">Top-fit opportunities</div>
+            </div>
+
+            <div class="card-surface p-3.5 rounded-xl border border-zinc-800/80">
+                <div class="flex items-center justify-between text-zinc-400 mb-1">
+                    <span class="text-xs font-medium">Cold Outreach</span>
+                    <i class="fa-solid fa-paper-plane text-xs text-sky-400"></i>
+                </div>
+                <div class="text-xl font-bold text-sky-300 font-mono-code" id="statContacted">0</div>
+                <div class="text-[11px] text-zinc-400 mt-0.5">Recruiters pitched</div>
+            </div>
+
+            <div class="card-surface p-3.5 rounded-xl border border-zinc-800/80">
+                <div class="flex items-center justify-between text-zinc-400 mb-1">
+                    <span class="text-xs font-medium text-amber-400">Interviewing</span>
+                    <i class="fa-solid fa-graduation-cap text-xs text-amber-400"></i>
+                </div>
+                <div class="text-xl font-bold text-amber-300 font-mono-code" id="statInterviewing">0</div>
+                <div class="text-[11px] text-zinc-400 mt-0.5">Active interview rounds</div>
+            </div>
+        </section>
+
+        <!-- Search, Filter & Location Control Panel -->
+        <section aria-label="Filters and Search" class="space-y-3">
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                <!-- Search Box with '/' Shortcut & Clear Button -->
+                <div class="relative flex-1 max-w-md">
+                    <label for="searchInput" class="sr-only">Search roles, companies, tech stack or keywords</label>
+                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 text-xs pointer-events-none"></i>
+                    <input 
+                        type="text" 
+                        id="searchInput" 
+                        oninput="onSearchInput(this.value)" 
+                        placeholder="Search roles, companies, skills (e.g. NestJS, Redis, Pune)..." 
+                        class="w-full bg-zinc-900/90 border border-zinc-700/80 rounded-lg pl-9 pr-14 py-2 text-xs text-zinc-100 placeholder-zinc-500 focus:border-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-400"
+                    >
+                    <button 
+                        id="clearSearchBtn" 
+                        onclick="clearSearch()" 
+                        class="hidden absolute right-8 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200 text-xs px-1" 
+                        title="Clear search"
+                    >
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-mono-code bg-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded border border-zinc-700 pointer-events-none" title="Press '/' to focus search">/</span >
+                </div>
+
+                <!-- Location & Hub Selectors -->
+                <div class="flex flex-wrap items-center gap-2 bg-zinc-900/80 p-1.5 rounded-lg border border-zinc-800">
+                    <div class="flex items-center space-x-1.5">
+                        <i class="fa-solid fa-earth-americas text-zinc-400 text-xs ml-1"></i>
+                        <label for="countryFilter" class="text-xs text-zinc-300 font-medium">Country:</label>
+                        <select id="countryFilter" onchange="onCountryChange()" class="bg-zinc-950 border border-zinc-700 rounded-md px-2.5 py-1.5 text-xs text-zinc-100 font-medium focus:border-zinc-400 focus:outline-none cursor-pointer">
+                            <option value="India" selected>India 🇮🇳</option>
+                            <option value="United States">United States 🇺🇸</option>
+                            <option value="Europe">Europe / UK 🇪🇺</option>
+                            <option value="Remote">Worldwide Remote 🌐</option>
+                            <option value="All">All Locations</option>
+                        </select>
+                    </div>
+
+                    <div class="flex items-center space-x-1.5 border-l border-zinc-700 pl-2" id="stateFilterContainer">
+                        <i class="fa-solid fa-location-dot text-zinc-400 text-xs"></i>
+                        <label for="stateFilter" class="text-xs text-zinc-300 font-medium">Hub:</label>
+                        <select id="stateFilter" onchange="onStateChange()" class="bg-zinc-950 border border-zinc-700 rounded-md px-2.5 py-1.5 text-xs text-zinc-100 font-medium focus:border-zinc-400 focus:outline-none cursor-pointer">
+                            <option value="All India">All India</option>
+                            <option value="Pune" selected>Pune (MH)</option>
+                            <option value="Bangalore">Bangalore (KA)</option>
+                            <option value="Mumbai">Mumbai (MH)</option>
+                            <option value="Hyderabad">Hyderabad (TS)</option>
+                            <option value="Delhi NCR">Delhi NCR</option>
+                            <option value="Chennai">Chennai (TN)</option>
+                            <option value="Remote">Remote (India)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Match Score Presets & Debounced Slider -->
+                <div class="flex flex-wrap items-center gap-2 bg-zinc-900/80 p-1.5 rounded-lg border border-zinc-800">
+                    <span class="text-xs text-zinc-300 font-medium ml-1">Score:</span>
+                    <button onclick="setScorePreset(0)" class="score-btn btn-secondary text-xs" data-score="0">All</button>
+                    <button onclick="setScorePreset(50)" class="score-btn btn-secondary text-xs" data-score="50">50%+</button>
+                    <button onclick="setScorePreset(70)" class="score-btn btn-primary text-xs" data-score="70">70%+ High</button>
+                    <button onclick="setScorePreset(80)" class="score-btn btn-secondary text-xs" data-score="80">80%+ Prime</button>
+                    <label for="scoreRange" class="sr-only">Minimum match score slider</label>
+                    <input type="range" id="scoreRange" min="0" max="100" value="70" step="5" oninput="updateScoreFilter(this.value)" class="w-16 sm:w-20 accent-emerald-400 cursor-pointer ml-1" title="Adjust minimum match score">
+                    <span id="scoreLabel" class="text-xs font-semibold text-zinc-200 font-mono-code w-10 text-right">70%</span>
+                </div>
+
+                <!-- Sort Order Selector -->
+                <div class="flex items-center space-x-2 shrink-0">
+                    <label for="sortBy" class="sr-only">Sort opportunities by</label>
+                    <select id="sortBy" onchange="fetchJobs(1)" class="bg-zinc-900 border border-zinc-700 rounded-lg px-2.5 py-2 text-xs font-medium text-zinc-200 cursor-pointer focus:border-zinc-400 focus:outline-none">
+                        <option value="match_score" selected>Sort: Match Score</option>
+                        <option value="date">Sort: Date Scraped</option>
+                        <option value="company">Sort: Company Name</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Application Status Tabs Filter Row -->
+            <div class="flex items-center justify-between border-b border-zinc-800/80 pb-2 overflow-x-auto gap-2">
+                <div class="flex items-center space-x-1.5" role="tablist">
+                    <button onclick="setStatusFilter('all')" class="status-tab btn-primary shrink-0" data-status="all" role="tab" aria-selected="true">
+                        <span>All Opportunities</span>
+                        <span id="tabCountAll" class="bg-zinc-800 text-zinc-200 text-xs px-2 py-0.5 rounded-full font-mono-code">0</span>
+                    </button>
+                    <button onclick="setStatusFilter('new')" class="status-tab btn-secondary shrink-0" data-status="new" role="tab" aria-selected="false">
+                        <span>New</span>
+                        <span id="tabCountNew" class="bg-zinc-800 text-zinc-300 text-xs px-2 py-0.5 rounded-full font-mono-code">0</span>
+                    </button>
+                    <button onclick="setStatusFilter('applied')" class="status-tab btn-secondary shrink-0" data-status="applied" role="tab" aria-selected="false">
+                        <span>Applied</span>
+                        <span id="tabCountApplied" class="bg-zinc-800 text-zinc-300 text-xs px-2 py-0.5 rounded-full font-mono-code">0</span>
+                    </button>
+                    <button onclick="setStatusFilter('contacted')" class="status-tab btn-secondary shrink-0" data-status="contacted" role="tab" aria-selected="false">
+                        <span>Cold Outreach</span>
+                        <span id="tabCountContacted" class="bg-zinc-800 text-zinc-300 text-xs px-2 py-0.5 rounded-full font-mono-code">0</span>
+                    </button>
+                    <button onclick="setStatusFilter('interviewing')" class="status-tab btn-secondary shrink-0" data-status="interviewing" role="tab" aria-selected="false">
+                        <span>Interviewing</span>
+                        <span id="tabCountInterviewing" class="bg-zinc-800 text-zinc-300 text-xs px-2 py-0.5 rounded-full font-mono-code">0</span>
+                    </button>
+                    <button onclick="setStatusFilter('saved')" class="status-tab btn-secondary shrink-0" data-status="saved" role="tab" aria-selected="false">
+                        <span>Saved</span>
+                        <span id="tabCountSaved" class="bg-zinc-800 text-zinc-300 text-xs px-2 py-0.5 rounded-full font-mono-code">0</span>
+                    </button>
+                </div>
+
+                <!-- Active Filter Reset Button -->
+                <button onclick="resetAllFilters()" class="text-xs text-zinc-400 hover:text-zinc-200 flex items-center gap-1 shrink-0 px-2 py-1 transition" title="Reset all search queries, country, hub, and score filters to default">
+                    <i class="fa-solid fa-rotate-left text-[10px]"></i>
+                    <span>Reset Filters</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Top Pagination Header Bar -->
+        <section id="topPagination" class="hidden flex items-center justify-between text-xs text-zinc-400 px-1">
+            <div>
+                Showing <span id="topRangeText" class="font-semibold text-zinc-200 font-mono-code">0–0</span> of <span id="jobsCount" class="font-semibold text-zinc-100 font-mono-code">0</span> opportunities
+            </div>
+            <div class="flex items-center space-x-2">
+                <button id="topPrevBtn" onclick="prevPage()" class="btn-secondary !py-1 !px-2 text-xs" disabled>
+                    <i class="fa-solid fa-chevron-left text-[10px]"></i>
+                </button>
+                <span id="topPageIndicator" class="font-mono-code text-zinc-300">Page 1 / 1</span>
+                <button id="topNextBtn" onclick="nextPage()" class="btn-secondary !py-1 !px-2 text-xs" disabled>
+                    <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- Job Cards List Container -->
+        <section aria-label="Job Listings" id="jobsList" class="space-y-3">
+            <div class="card-surface rounded-xl p-10 text-center text-zinc-400 border border-zinc-800">
+                <i class="fa-solid fa-circle-notch fa-spin text-2xl text-emerald-400 mb-3"></i>
+                <h3 class="text-sm font-semibold text-zinc-200">Loading verified opportunities...</h3>
+                <p class="text-xs text-zinc-500 mt-1">Connecting to MongoDB & scoring against your full-stack resume profile.</p>
+            </div>
+        </section>
+
+        <!-- Bottom Pagination Bar -->
+        <section id="paginationBar" class="hidden card-surface rounded-xl p-4 border border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div class="text-xs text-zinc-400">
+                Showing <span id="pageRangeText" class="font-semibold text-zinc-100 font-mono-code">0–0</span> of <span id="pageTotalText" class="font-semibold text-zinc-100 font-mono-code">0</span> opportunities
+            </div>
+            <div class="flex items-center space-x-2">
+                <button id="prevPageBtn" onclick="prevPage()" class="btn-secondary" disabled>
+                    <i class="fa-solid fa-arrow-left text-xs"></i>
+                    <span>Previous 10</span>
+                </button>
+                <div id="pagePillsContainer" class="flex items-center space-x-1"></div>
+                <button id="nextPageBtn" onclick="nextPage()" class="btn-secondary" disabled>
+                    <span>Next 10</span>
+                    <i class="fa-solid fa-arrow-right text-xs"></i>
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal 1: Recruiter Cold Outreach Sequence Modal -->
+    <div id="emailModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modalEmailTitle">
+        <div class="bg-zinc-900 border border-zinc-700/80 rounded-2xl max-w-2xl w-full max-h-[92vh] flex flex-col shadow-2xl animate-fade-in overflow-hidden">
+            <!-- Modal Header -->
+            <div class="p-4 border-b border-zinc-800 flex items-center justify-between bg-zinc-950">
+                <div class="flex items-center space-x-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center text-sm">
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </div>
+                    <div>
+                        <h2 id="modalEmailTitle" class="text-sm font-semibold text-white">Recruiter Cold Pitch & Follow-up Sequence</h2>
+                        <p id="modalEmailSubtitle" class="text-xs text-zinc-400">AI-tailored outreach referencing your 300K+ concurrent PRYM metrics</p>
+                    </div>
+                </div>
+                <button onclick="closeEmailModal()" class="text-zinc-400 hover:text-white p-1 rounded-md transition" aria-label="Close modal">
+                    <i class="fa-solid fa-xmark text-base"></i>
+                </button>
+            </div>
+
+            <!-- Sequence Step Selector Tabs -->
+            <div class="px-5 pt-3 border-b border-zinc-800 bg-zinc-950 flex items-center justify-between gap-2 overflow-x-auto">
+                <div class="flex items-center space-x-1" role="tablist">
+                    <button onclick="switchSequenceTab('initial')" id="seqTab_initial" class="seq-tab btn-primary !py-1 text-xs">1. Initial Pitch (Day 0)</button>
+                    <button onclick="switchSequenceTab('day3')" id="seqTab_day3" class="seq-tab btn-secondary !py-1 text-xs">2. Follow-Up (Day 3)</button>
+                    <button onclick="switchSequenceTab('day7')" id="seqTab_day7" class="seq-tab btn-secondary !py-1 text-xs">3. Final Check-in (Day 7)</button>
+                    <button onclick="switchSequenceTab('linkedin')" id="seqTab_linkedin" class="seq-tab btn-secondary !py-1 text-xs">LinkedIn Note</button>
+                </div>
+                <button onclick="regenerateOutreachKit()" id="aiRegenBtn" class="btn-secondary !py-1 text-xs text-amber-300 border-amber-500/40 hover:bg-amber-500/10 shrink-0" title="Re-synthesize pitch copy using Gemini LLM">
+                    <i class="fa-solid fa-wand-magic-sparkles text-[10px]"></i>
+                    <span>AI Re-craft</span>
+                </button>
+            </div>
+
+            <!-- Modal Content Form -->
+            <div class="p-5 overflow-y-auto space-y-3.5 text-xs">
+                <div>
+                    <label for="modalRecipient" class="block text-zinc-300 font-medium mb-1">Recipient HR / Recruiter Email:</label>
+                    <input type="email" id="modalRecipient" placeholder="e.g. careers@company.com" class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-zinc-100 text-xs focus:border-zinc-400 focus:outline-none">
+                </div>
+
+                <div>
+                    <label for="modalSubject" class="block text-zinc-300 font-medium mb-1">Subject Line:</label>
+                    <input type="text" id="modalSubject" class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-zinc-100 text-xs focus:border-zinc-400 focus:outline-none">
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label for="modalBody" class="block text-zinc-300 font-medium">Message Body:</label>
+                        <span id="charCountLabel" class="text-[10px] text-zinc-500 font-mono-code"></span>
+                    </div>
+                    <textarea id="modalBody" rows="9" class="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-3 text-zinc-200 text-xs font-mono-code focus:border-zinc-400 focus:outline-none leading-relaxed"></textarea>
+                </div>
+
+                <div class="bg-zinc-950/80 p-3 rounded-lg border border-zinc-800 text-zinc-400 text-xs space-y-1">
+                    <div class="font-medium text-zinc-300 flex items-center gap-1.5">
+                        <i class="fa-solid fa-paperclip text-xs text-zinc-400"></i>
+                        <span>Automatic Resume Attachment:</span>
+                    </div>
+                    <p class="text-[11px] text-zinc-500">
+                        When dispatched via Gmail SMTP, your verified resume PDF (<code class="text-zinc-300 font-mono-code">sarthak_joshi_fullstack_developer_nov_2026.pdf</code>) is automatically attached to the outgoing email.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Modal Footer Actions -->
+            <div class="p-4 border-t border-zinc-800 bg-zinc-950 flex flex-wrap items-center justify-between gap-3">
+                <button onclick="copyEmailBody()" class="btn-secondary">
+                    <i class="fa-regular fa-copy text-xs"></i>
+                    <span>Copy Text</span>
+                </button>
+                <div class="flex items-center space-x-2">
+                    <button onclick="closeEmailModal()" class="btn-outline">Cancel</button>
+                    <button onclick="sendColdEmail()" id="sendEmailBtn" class="btn-primary !bg-emerald-500 hover:!bg-emerald-400 !text-zinc-950 font-bold">
+                        <i class="fa-solid fa-paper-plane text-xs"></i>
+                        <span>Send via Gmail SMTP</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 2: Technical Interview Copilot Modal -->
+    <div id="interviewModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="interviewModalTitle">
+        <div class="bg-zinc-900 border border-zinc-700/80 rounded-2xl max-w-3xl w-full max-h-[92vh] flex flex-col shadow-2xl animate-fade-in overflow-hidden">
+            <!-- Modal Header -->
+            <div class="p-4 border-b border-zinc-800 flex items-center justify-between bg-zinc-950">
+                <div class="flex items-center space-x-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center text-sm">
+                        <i class="fa-solid fa-graduation-cap"></i>
+                    </div>
+                    <div>
+                        <h2 id="interviewModalTitle" class="text-sm font-semibold text-white">Technical Interview Prep Copilot</h2>
+                        <p id="interviewModalSubtitle" class="text-xs text-zinc-400">Architecture discussion points and probable interview questions</p>
+                    </div>
+                </div>
+                <button onclick="closeInterviewModal()" class="text-zinc-400 hover:text-white p-1 rounded-md transition" aria-label="Close modal">
+                    <i class="fa-solid fa-xmark text-base"></i>
+                </button>
+            </div>
+
+            <!-- Modal Content -->
+            <div class="p-5 overflow-y-auto space-y-4 text-xs">
+                <!-- 1. Core Focus Topics -->
+                <div>
+                    <h3 class="text-xs font-semibold text-zinc-200 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                        <i class="fa-solid fa-layer-group text-amber-400 text-xs"></i>
+                        <span>Core Focus Topics For This Role</span>
+                    </h3>
+                    <div id="interviewTopics" class="flex flex-wrap gap-1.5"></div>
+                </div>
+
+                <!-- 2. High-Impact Architecture Points -->
+                <div class="bg-zinc-950/90 p-4 rounded-xl border border-zinc-800 space-y-2">
+                    <h3 class="text-xs font-semibold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-microchip text-xs"></i>
+                        <span>Key Architecture & Experience Points to Highlight</span>
+                    </h3>
+                    <ul id="interviewArchitecture" class="space-y-1.5 text-zinc-300 list-disc list-inside leading-relaxed"></ul>
+                </div>
+
+                <!-- 3. Targeted Questions & Recommended Answers -->
+                <div>
+                    <h3 class="text-xs font-semibold text-zinc-200 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                        <i class="fa-solid fa-circle-question text-sky-400 text-xs"></i>
+                        <span>Probable Interview Questions & Recommended Talking Points</span>
+                    </h3>
+                    <div id="interviewQuestionsList" class="space-y-3"></div>
+                </div>
+            </div>
+
+            <!-- Modal Footer Actions -->
+            <div class="p-4 border-t border-zinc-800 bg-zinc-950 flex items-center justify-between">
+                <button onclick="copyInterviewNotes()" class="btn-secondary">
+                    <i class="fa-regular fa-copy text-xs"></i>
+                    <span>Copy Full Prep Sheet</span>
+                </button>
+                <button onclick="closeInterviewModal()" class="btn-primary">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 3: Targeted Crawl Trigger Modal -->
+    <div id="crawlModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="crawlModalTitle">
+        <div class="bg-zinc-900 border border-zinc-700/80 rounded-2xl max-w-md w-full flex flex-col shadow-2xl animate-fade-in overflow-hidden">
+            <div class="p-4 border-b border-zinc-800 flex items-center justify-between bg-zinc-950">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-radar text-emerald-400"></i>
+                    <h2 id="crawlModalTitle" class="text-sm font-semibold text-white">Targeted Live Job Discovery</h2>
+                </div>
+                <button onclick="closeCrawlModal()" class="text-zinc-400 hover:text-white p-1 rounded-md" aria-label="Close modal">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="p-5 space-y-4 text-xs">
+                <div>
+                    <label for="crawlCountry" class="block text-zinc-300 font-medium mb-1.5">Target Country:</label>
+                    <select id="crawlCountry" onchange="onCrawlCountryChange()" class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-zinc-100 text-xs focus:border-zinc-400 focus:outline-none">
+                        <option value="India" selected>India 🇮🇳</option>
+                        <option value="United States">United States 🇺🇸</option>
+                        <option value="Europe">Europe / UK 🇪🇺</option>
+                        <option value="Remote">Worldwide Remote 🌐</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="crawlState" class="block text-zinc-300 font-medium mb-1.5">Target Hub / City:</label>
+                    <select id="crawlState" class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-zinc-100 text-xs focus:border-zinc-400 focus:outline-none">
+                        <option value="All India">All India</option>
+                        <option value="Pune" selected>Pune (MH)</option>
+                        <option value="Bangalore">Bangalore (KA)</option>
+                        <option value="Mumbai">Mumbai (MH)</option>
+                        <option value="Hyderabad">Hyderabad (TS)</option>
+                        <option value="Remote">Remote (India)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="crawlScoreRange" class="block text-zinc-300 font-medium mb-1.5">Minimum Match Score Threshold:</label>
+                    <div class="flex items-center space-x-3 bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2">
+                        <input type="range" id="crawlScoreRange" min="20" max="85" value="70" step="5" oninput="document.getElementById('crawlScoreVal').innerText = this.value + '%'" class="flex-1 accent-emerald-400 cursor-pointer">
+                        <span id="crawlScoreVal" class="text-xs font-semibold text-zinc-200 font-mono-code w-10 text-right">70%</span>
+                    </div>
+                </div>
+
+                <div class="bg-zinc-950/80 border border-zinc-800 rounded-lg p-3 space-y-1.5">
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                        <input type="checkbox" id="crawlSendMail" class="rounded bg-zinc-900 border-zinc-700 text-emerald-500 focus:ring-0">
+                        <span class="text-zinc-200 font-medium">Send Daily Briefing Email with Excel</span>
+                    </label>
+                    <p class="text-[11px] text-zinc-500 pl-5">Automatically compiles the Excel workbook and dispatches the HTML briefing to <span id="candidateEmailDisplay" class="text-zinc-300">sarthakjoshi12005@gmail.com</span>.</p>
+                </div>
+            </div>
+
+            <div class="p-4 border-t border-zinc-800 bg-zinc-950 flex items-center justify-end space-x-2">
+                <button onclick="closeCrawlModal()" class="btn-outline">Cancel</button>
+                <button onclick="launchTargetedCrawl()" class="btn-primary !bg-emerald-500 hover:!bg-emerald-400 !text-zinc-950 font-bold">
+                    <i class="fa-solid fa-arrows-rotate text-xs"></i>
+                    <span>Start Discovery Scan</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 4: Live Crawler Logs Modal -->
+    <div id="logsModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="logsModalTitle">
+        <div class="bg-zinc-900 border border-zinc-700/80 rounded-2xl max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl animate-fade-in overflow-hidden">
+            <div class="p-4 border-b border-zinc-800 flex items-center justify-between bg-zinc-950">
+                <div class="flex items-center space-x-2.5">
+                    <i class="fa-solid fa-terminal text-zinc-400"></i>
+                    <div>
+                        <h2 id="logsModalTitle" class="text-sm font-semibold text-white">Live Application & Crawler Logs</h2>
+                        <p class="text-[11px] text-zinc-500 font-mono-code">Streaming real-time execution outputs</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <input type="text" id="logSearchInput" oninput="renderLogs()" placeholder="Filter logs..." class="bg-zinc-950 border border-zinc-700 rounded px-2.5 py-1 text-xs text-zinc-200 focus:outline-none w-36">
+                    <button onclick="fetchLiveLogs()" class="text-zinc-400 hover:text-white p-1 rounded transition" title="Refresh logs">
+                        <i class="fa-solid fa-arrows-rotate text-xs"></i>
+                    </button>
+                    <button onclick="closeLogsModal()" class="text-zinc-400 hover:text-white p-1 rounded transition" aria-label="Close logs modal">
+                        <i class="fa-solid fa-xmark text-sm"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div id="logsContainer" class="p-4 overflow-y-auto bg-black font-mono-code text-[11px] space-y-1 h-96 leading-relaxed select-text">
+                <div class="text-zinc-500">Connecting to live log stream...</div>
+            </div>
+
+            <div class="p-3 border-t border-zinc-800 bg-zinc-950 flex items-center justify-between text-[11px] text-zinc-500">
+                <span>Auto-refreshes every 4s while open</span>
+                <button onclick="closeLogsModal()" class="btn-secondary !py-1 text-xs">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 5: Full Job Description & Match Breakdown Modal -->
+    <div id="jobDetailsModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="jobDetailsTitle">
+        <div class="bg-zinc-900 border border-zinc-700/80 rounded-2xl max-w-3xl w-full max-h-[92vh] flex flex-col shadow-2xl animate-fade-in overflow-hidden">
+            <!-- Modal Header -->
+            <div class="p-4 sm:p-5 border-b border-zinc-800 flex items-start justify-between bg-zinc-950 gap-4">
+                <div class="flex items-start space-x-3.5 min-w-0 flex-1">
+                    <div id="detailsCompanyInitial" class="w-12 h-12 rounded-xl bg-zinc-800/90 border border-zinc-700/80 flex items-center justify-center font-bold text-zinc-200 text-base shrink-0 shadow-inner">
+                        C
+                    </div>
+                    <div class="space-y-1 flex-1 min-w-0">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span id="detailsScorePill" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold font-mono-code border bg-emerald-950/70 text-emerald-300 border-emerald-700/80">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                                <span id="detailsScoreVal">85% Match</span>
+                            </span>
+                            <span class="text-xs text-zinc-600">•</span>
+                            <span id="detailsSourceBadge" class="text-xs text-zinc-300 bg-zinc-900 px-2.5 py-0.5 rounded border border-zinc-800">
+                                ATS Portal
+                            </span>
+                            <span class="text-xs text-zinc-600">•</span>
+                            <span id="detailsDatePosted" class="text-xs text-zinc-400 font-mono-code">Posted Today</span>
+                        </div>
+                        <h2 id="jobDetailsTitle" class="text-base font-bold text-white tracking-tight leading-snug">
+                            Role Title
+                        </h2>
+                        <p class="text-xs text-zinc-400 flex items-center gap-2 flex-wrap">
+                            <span id="detailsCompany" class="text-zinc-200 font-semibold">Company</span>
+                            <span class="text-zinc-600">•</span>
+                            <span id="detailsLocation" class="text-zinc-300 flex items-center gap-1">
+                                <i class="fa-solid fa-location-dot text-zinc-400 text-[10px]"></i>
+                                Pune, India
+                            </span>
+                        </p>
+                    </div>
+                </div>
+                <button onclick="closeJobDetailsModal()" class="text-zinc-400 hover:text-white p-1 rounded-md transition" aria-label="Close job details">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body (Scrollable) -->
+            <div class="p-5 overflow-y-auto space-y-4 text-xs">
+                <!-- Match Score Breakdown Visual Bars -->
+                <div class="bg-zinc-950/90 p-4 rounded-xl border border-zinc-800 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xs font-semibold text-zinc-200 uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="fa-solid fa-chart-simple text-emerald-400"></i>
+                            <span>Match Breakdown vs Your Resume</span>
+                        </h3>
+                        <span id="detailsMatchSummaryBadge" class="text-[11px] text-zinc-400 font-mono-code">1.8 yrs Exp</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
+                        <div class="bg-zinc-900 p-2.5 rounded-lg border border-zinc-800">
+                            <div class="text-[10px] text-zinc-400 font-medium">Role Fit</div>
+                            <div class="text-sm font-bold text-zinc-100 font-mono-code mt-0.5">30 / 30</div>
+                            <div class="w-full bg-zinc-800 h-1 rounded-full mt-1.5 overflow-hidden">
+                                <div class="bg-emerald-400 h-full rounded-full" style="width: 100%"></div>
+                            </div>
+                        </div>
+                        <div class="bg-zinc-900 p-2.5 rounded-lg border border-zinc-800">
+                            <div class="text-[10px] text-zinc-400 font-medium">Skills Overlap</div>
+                            <div class="text-sm font-bold text-emerald-300 font-mono-code mt-0.5" id="detailsSkillPts">45 / 45</div>
+                            <div class="w-full bg-zinc-800 h-1 rounded-full mt-1.5 overflow-hidden">
+                                <div class="bg-emerald-400 h-full rounded-full" id="detailsSkillBar" style="width: 90%"></div>
+                            </div>
+                        </div>
+                        <div class="bg-zinc-900 p-2.5 rounded-lg border border-zinc-800">
+                            <div class="text-[10px] text-zinc-400 font-medium">Experience Fit</div>
+                            <div class="text-sm font-bold text-amber-300 font-mono-code mt-0.5" id="detailsExpPts">13 / 15</div>
+                            <div class="w-full bg-zinc-800 h-1 rounded-full mt-1.5 overflow-hidden">
+                                <div class="bg-amber-400 h-full rounded-full" id="detailsExpBar" style="width: 85%"></div>
+                            </div>
+                        </div>
+                        <div class="bg-zinc-900 p-2.5 rounded-lg border border-zinc-800">
+                            <div class="text-[10px] text-zinc-400 font-medium">Location Hub</div>
+                            <div class="text-sm font-bold text-sky-300 font-mono-code mt-0.5" id="detailsLocPts">10 / 10</div>
+                            <div class="w-full bg-zinc-800 h-1 rounded-full mt-1.5 overflow-hidden">
+                                <div class="bg-sky-400 h-full rounded-full" id="detailsLocBar" style="width: 100%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Matched Core Skills -->
+                <div>
+                    <h3 class="text-xs font-semibold text-zinc-200 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                        <i class="fa-solid fa-tags text-sky-400 text-xs"></i>
+                        <span>Matched Technologies & Required Skills</span>
+                    </h3>
+                    <div id="detailsSkillsList" class="flex flex-wrap gap-1.5"></div>
+                </div>
+
+                <!-- Complete Full Job Description -->
+                <div>
+                    <h3 class="text-xs font-semibold text-zinc-200 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                        <i class="fa-solid fa-file-lines text-zinc-400 text-xs"></i>
+                        <span>Complete Job Specification</span>
+                    </h3>
+                    <div id="detailsFullDescription" class="bg-zinc-950 p-4 rounded-xl border border-zinc-800 text-zinc-300 font-sans text-xs leading-relaxed whitespace-pre-wrap select-text max-h-80 overflow-y-auto">
+                        Loading job description...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer Actions Cluster -->
+            <div class="p-4 border-t border-zinc-800 bg-zinc-950 flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center space-x-2">
+                    <button onclick="copyDetailsLinkedInPitch()" class="btn-secondary !py-2 text-xs" title="Copy 300-char connection pitch for LinkedIn">
+                        <i class="fa-regular fa-copy text-xs"></i>
+                        <span>Copy LinkedIn Note</span>
+                    </button>
+                    <button onclick="triggerOutreachFromDetails()" class="btn-outline !py-2 text-xs text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/10">
+                        <i class="fa-solid fa-paper-plane text-xs"></i>
+                        <span>AI Outreach Kit</span>
+                    </button>
+                    <button onclick="triggerInterviewFromDetails()" class="btn-outline !py-2 text-xs text-amber-300 border-amber-500/30 hover:bg-amber-500/10">
+                        <i class="fa-solid fa-graduation-cap text-xs"></i>
+                        <span>Interview Prep</span>
+                    </button>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button onclick="closeJobDetailsModal()" class="btn-secondary !py-2">Close</button>
+                    <a id="detailsOfficialApplyBtn" href="#" target="_blank" rel="noopener noreferrer" class="btn-primary !bg-emerald-500 hover:!bg-emerald-400 !text-zinc-950 font-bold !py-2 px-4">
+                        <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+                        <span>Apply on Official Portal</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-zinc-900 border border-zinc-700/90 rounded-xl px-4 py-3 text-xs text-white shadow-2xl flex items-center space-x-3 transition-all duration-300 opacity-0 translate-y-3 pointer-events-none z-50">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400 text-sm"></i>
+        <span id="toastMsg" class="font-medium">Notification message</span>
+        <button id="toastUndoBtn" class="hidden text-xs text-amber-400 underline font-medium ml-2 cursor-pointer hover:text-amber-300">Undo</button>
+    </div>
+
+    <!-- Frontend Interactive Application Logic -->
+    <script src="app.js" defer></script>
+</body>
+</html>

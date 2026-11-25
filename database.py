@@ -259,7 +259,10 @@ class Database:
                 clean_state = "remote"
             
             if clean_state:
-                state_pattern = {"$regex": clean_state, "$options": "i"}
+                if clean_state.lower() == "pune":
+                    state_pattern = {"$regex": r"pune|maharashtra|hinjewadi|baner|magarpatta|kharadi|remote", "$options": "i"}
+                else:
+                    state_pattern = {"$regex": clean_state, "$options": "i"}
                 state_match = {"$or": [{"location": state_pattern}, {"state": state_pattern}]}
                 if "$or" in query:
                     existing_or = query.pop("$or")
